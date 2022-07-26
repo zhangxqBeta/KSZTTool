@@ -86,6 +86,7 @@ public class StringHandlerAction extends AnAction {
                     Cell cell = row.getCell(j);
                     String cellValue = cell == null ? "" : cell.getStringCellValue();
                     if (cellValue == null || cellValue.isEmpty()) cellValue = "";
+                    if (i == 0) cellValue = cellValue.trim();
                     result.get(i).add(cellValue);
                 }
             }
