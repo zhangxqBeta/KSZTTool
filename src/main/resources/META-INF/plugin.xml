@@ -1,0 +1,45 @@
+<!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
+<idea-plugin>
+    <!-- Unique identifier of the plugin. It should be FQN. It cannot be changed between the plugin versions. -->
+    <id>com.zhangxq.stringHandler</id>
+
+    <!-- Public plugin name should be written in Title Case.
+         Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-name -->
+    <name>StringHandler</name>
+
+    <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
+    <vendor email="zhangxiaoqi@ksztone.com" url="https://www.yourcompany.com">kszt</vendor>
+
+    <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
+         Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
+         Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
+    <description>
+        <![CDATA[
+            <html>
+                <body>
+                    <h2>选择excel文件，自动导入里面的多语言，导入后放置在 string_auto.xml 中</h2>
+                    <h2>excel 格式要求：</h2>
+                    <ul>
+                      <li>第一行为：Tags|EN|MY|PH|TH.......</li>
+                      <li>Tags 列需自定义字段名称，否则自动生成，自动生成可读性较差</li>
+                    </ul>
+                </body>
+            </html>
+        ]]>
+    </description>
+
+    <!-- Product and plugin compatibility requirements.
+         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
+    <depends>com.intellij.modules.platform</depends>
+
+    <!-- Extension points defined by the plugin.
+         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
+    <extensions defaultExtensionNs="com.intellij">
+
+    </extensions>
+    <actions>
+        <action id="stringHandlerAction" class="com.zhangxq.stringhandler.StringHandlerAction" text="StringHandler" description="StringHandler">
+            <add-to-group group-id="HelpMenu" anchor="last"/>
+        </action>
+    </actions>
+</idea-plugin>
