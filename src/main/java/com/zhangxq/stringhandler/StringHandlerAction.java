@@ -1,5 +1,6 @@
 package com.zhangxq.stringhandler;
 
+import com.intellij.notification.*;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.diagnostic.Logger;
@@ -29,10 +30,11 @@ public class StringHandlerAction extends AnAction {
     private static final String TAGS = "Tags";
     public static String fileName = "string_auto.xml";
     private static int defaultNum = 0;
+    private Project project;
 
     @Override
     public void actionPerformed(AnActionEvent e) {
-        Project project = e.getProject();
+        project = e.getProject();
         if (project != null) {
             fileChoose(project.getBasePath());
         }
@@ -59,7 +61,7 @@ public class StringHandlerAction extends AnAction {
         try {
             String[] split = excel.getName().split("\\.");
             if (split.length < 2) {
-                logger.debug("文件名格式错误！！");
+                notify("操作失败：文件名格式错误[" + excel.getName() + "]", NotificationType.ERROR);
                 return null;
             }
             Workbook wb;
@@ -69,7 +71,7 @@ public class StringHandlerAction extends AnAction {
             } else if ("xlsx".equals(split[1])) {
                 wb = new XSSFWorkbook(excel);
             } else {
-                logger.debug("非excel文件后缀！！");
+                notify("操作失败：非excel文件后缀！！", NotificationType.ERROR);
                 return null;
             }
 
@@ -97,6 +99,7 @@ public class StringHandlerAction extends AnAction {
 
     private void setValuesToProject(String projectPath, List<List<String>> data) {
         projectPath = projectPath + "/app/src/main/res";
+//        projectPath = "/Users/construct/work/litmatch_app/app/src/main/res";
         File file = new File(projectPath);
         FilenameFilter filenameFilter = new StringsNameFilter();
         if (file.exists()) {
@@ -164,6 +167,8 @@ public class StringHandlerAction extends AnAction {
                                 for (int i = 0; i < newStrings.size(); i++) {
                                     String content = newStrings.get(i);
                                     if (content == null || content.length() == 0) continue;
+                                    content = content.replace("\"", "\\\"");
+                                    content = content.replace("'", "\\'");
                                     Element stringItem = new Element("string");
                                     stringItem.setAttribute("name", tags.get(i));
                                     stringItem.addContent(content);
@@ -179,10 +184,13 @@ public class StringHandlerAction extends AnAction {
                             XMLOutputter out = new XMLOutputter(format);
                             out.output(doc, new FileOutputStream(fileNew));
                         } catch (JDOMException | IOException e) {
-                            throw new RuntimeException(e);
+                            e.printStackTrace();
+                            notify("操作异常：" + e.getMessage(), NotificationType.ERROR);
                         }
                     }
                 }
+
+                notify("操作完成", NotificationType.INFORMATION);
             }
         }
     }
@@ -193,5 +201,12 @@ public class StringHandlerAction extends AnAction {
         public boolean accept(File dir, String name) {
             return name.equals(fileName);
         }
+    }
+
+    private void notify(String content, NotificationType type) {
+        NotificationGroupManager.getInstance()
+                .getNotificationGroup("StringHandler")
+                .createNotification(content, type)
+                .notify(project);
     }
 }

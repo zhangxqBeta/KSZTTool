@@ -37,6 +37,11 @@
     <extensions defaultExtensionNs="com.intellij">
 
     </extensions>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <notificationGroup id="StringHandler" displayType="BALLOON"/>
+    </extensions>
+
     <actions>
         <action id="stringHandlerAction" class="com.zhangxq.stringhandler.StringHandlerAction" text="StringHandler" description="StringHandler">
             <add-to-group group-id="HelpMenu" anchor="last"/>
