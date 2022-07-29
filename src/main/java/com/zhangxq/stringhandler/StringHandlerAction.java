@@ -53,7 +53,13 @@ public class StringHandlerAction extends AnAction {
             logger.debug("项目目录：" + projectPath);
             logger.debug("选择文件：" + file.getAbsolutePath());
             List<List<String>> excelData = parseXls(file);
-            setValuesToProject(projectPath, excelData);
+            if (excelData == null) return;
+            if (excelData.size() > 0) {
+                notify("excel解析完成");
+                setValuesToProject(projectPath, excelData);
+            } else {
+                notifyError("解析数据为空");
+            }
         }
     }
 
@@ -61,7 +67,7 @@ public class StringHandlerAction extends AnAction {
         try {
             String[] split = excel.getName().split("\\.");
             if (split.length < 2) {
-                notify("操作失败：文件名格式错误[" + excel.getName() + "]", NotificationType.ERROR);
+                notifyError("操作失败：文件名格式错误[" + excel.getName() + "]");
                 return null;
             }
             Workbook wb;
@@ -71,14 +77,17 @@ public class StringHandlerAction extends AnAction {
             } else if ("xlsx".equals(split[1])) {
                 wb = new XSSFWorkbook(excel);
             } else {
-                notify("操作失败：非excel文件后缀！！", NotificationType.ERROR);
+                notifyError("操作失败：非excel文件后缀！！");
                 return null;
             }
 
             Sheet sheet = wb.getSheetAt(0);
             List<List<String>> result = new ArrayList<>();
             Row firstRow = sheet.getRow(0);
-            if (firstRow == null) return null;
+            if (firstRow == null) {
+                notifyError("首行为空！！");
+                return null;
+            }
             for (int i = sheet.getFirstRowNum(); i <= sheet.getLastRowNum(); i++) {
                 Row row = sheet.getRow(i);
                 result.add(new ArrayList<>());
@@ -93,7 +102,7 @@ public class StringHandlerAction extends AnAction {
             wb.close();
             return result;
         } catch (Exception e) {
-            e.printStackTrace();
+            notifyError("解析异常：" + e.getMessage());
             return null;
         }
     }
@@ -105,7 +114,7 @@ public class StringHandlerAction extends AnAction {
         FilenameFilter filenameFilter = new StringsNameFilter();
         if (file.exists()) {
             File[] files = file.listFiles();
-            if (files != null && data != null && data.size() > 1) {
+            if (files != null) {
                 Map<String, List<String>> dataMap = new HashMap<>();
                 Map<Integer, String> columnMap = new HashMap<>();
                 List<String> tags = new ArrayList<>();
@@ -139,14 +148,14 @@ public class StringHandlerAction extends AnAction {
                     String pathNameSuffix = pathName.substring(pathName.length() - 2);
                     if (item.getName().equals("values") || keys.contains(pathNameSuffix)) {
                         logger.debug("目录：" + item.getAbsolutePath());
-                        File[] stringfiles = item.listFiles(filenameFilter);
+                        File[] stringFiles = item.listFiles(filenameFilter);
 
                         try {
                             SAXBuilder builder = new SAXBuilder();
                             File fileNew;
                             Document doc;
                             Element root;
-                            if (stringfiles == null || stringfiles.length == 0) {
+                            if (stringFiles == null || stringFiles.length == 0) {
                                 fileNew = new File(item.getAbsolutePath() + "/" + fileName);
                                 boolean isSuccess = fileNew.createNewFile();
                                 if (!isSuccess) continue;
@@ -157,7 +166,7 @@ public class StringHandlerAction extends AnAction {
                                 root.setAttribute("ignore", "MissingTranslation", tools);
                                 doc.setRootElement(root);
                             } else {
-                                fileNew = stringfiles[0];
+                                fileNew = stringFiles[0];
                                 doc = builder.build(fileNew);
                                 root = doc.getRootElement();
                             }
@@ -186,13 +195,16 @@ public class StringHandlerAction extends AnAction {
                             out.output(doc, new FileOutputStream(fileNew));
                         } catch (JDOMException | IOException e) {
                             e.printStackTrace();
-                            notify("操作异常：" + e.getMessage(), NotificationType.ERROR);
+                            notifyError("插入异常：" + e.getMessage());
                         }
                     }
                 }
-
-                notify("操作完成", NotificationType.INFORMATION);
+                notify("插入完成");
+            } else {
+                notifyError("res 为空目录");
             }
+        } else {
+            notifyError("res 目录不存在");
         }
     }
 
@@ -204,10 +216,17 @@ public class StringHandlerAction extends AnAction {
         }
     }
 
-    private void notify(String content, NotificationType type) {
+    private void notify(String content) {
         NotificationGroupManager.getInstance()
                 .getNotificationGroup("StringHandler")
-                .createNotification(content, type)
+                .createNotification(content, NotificationType.INFORMATION)
+                .notify(project);
+    }
+
+    private void notifyError(String content) {
+        NotificationGroupManager.getInstance()
+                .getNotificationGroup("StringHandler")
+                .createNotification(content, NotificationType.ERROR)
                 .notify(project);
     }
 }

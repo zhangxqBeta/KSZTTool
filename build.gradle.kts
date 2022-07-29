@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "com.zhangxq"
-version = "1.0-beta5"
+version = "1.0"
 
 repositories {
     mavenCentral()

@@ -39,7 +39,8 @@
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij">
-        <notificationGroup id="StringHandler" displayType="BALLOON"/>
+        <notificationGroup displayType="BALLOON" id="StringHandler" />
+        <notificationGroup displayType="BALLOON" id="StringHandlerError" />
     </extensions>
 
     <actions>
