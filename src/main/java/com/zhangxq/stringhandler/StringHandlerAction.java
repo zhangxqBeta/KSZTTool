@@ -88,10 +88,12 @@ public class StringHandlerAction extends AnAction {
                 notifyError("首行为空！！");
                 return null;
             }
-            for (int i = sheet.getFirstRowNum(); i <= sheet.getLastRowNum(); i++) {
+
+            for (int i = 0; i < sheet.getPhysicalNumberOfRows(); i++) {
                 Row row = sheet.getRow(i);
+                if (row == null) continue;
                 result.add(new ArrayList<>());
-                for (int j = firstRow.getFirstCellNum(); j <= firstRow.getLastCellNum(); j++) {
+                for (int j = 0; j < firstRow.getPhysicalNumberOfCells(); j++) {
                     Cell cell = row.getCell(j);
                     String cellValue = cell == null ? "" : cell.getStringCellValue();
                     if (cellValue == null || cellValue.isEmpty()) cellValue = "";
