@@ -11,10 +11,7 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.jdom.Document;
-import org.jdom.Element;
-import org.jdom.JDOMException;
-import org.jdom.Namespace;
+import org.jdom.*;
 import org.jdom.input.SAXBuilder;
 import org.jdom.output.Format;
 import org.jdom.output.XMLOutputter;
@@ -111,19 +108,19 @@ public class StringHandlerAction extends AnAction {
 
     private void setValuesToProject(String projectPath, List<List<String>> data) {
         projectPath = projectPath + "/app/src/main/res";
-//        projectPath = "/Users/construct/work/litmatch_app/app/src/main/res";
+//        projectPath = "/Users/zhangxq/work/litmatch_app/app/src/main/res";
         File file = new File(projectPath);
         FilenameFilter filenameFilter = new StringsNameFilter();
         if (file.exists()) {
             File[] files = file.listFiles();
             if (files != null) {
-                Map<String, List<String>> dataMap = new HashMap<>();
-                Map<Integer, String> columnMap = new HashMap<>();
-                List<String> tags = new ArrayList<>();
-                List<String> tops = data.get(0);
+                Map<String, List<String>> dataMap = new HashMap<>(); // 保存过滤后的有效数据
+                Map<Integer, String> columnMap = new HashMap<>(); // 保存行号和语言的对应关系
+                List<String> tags = new ArrayList<>(); // 保存自定义tag列表
+                List<String> tops = data.get(0); // excel第一行
                 for (int i = 0; i < tops.size(); i++) {
                     String top = tops.get(i);
-                    if (top.equals(TAGS) || keys.contains(top)) {
+                    if (top.equals(TAGS) || keys.contains(top)) { // 如果是 Tags，或者包含在预定义语言类型中，
                         dataMap.put(top, new ArrayList<>());
                         columnMap.put(i, top);
                     }
@@ -176,6 +173,22 @@ public class StringHandlerAction extends AnAction {
                             List<String> newStrings = dataMap.get(pathNameSuffix);
                             if (item.getName().equals("values")) newStrings = dataMap.get("EN");
                             if (newStrings != null && newStrings.size() == tags.size()) {
+                                // 更新操作
+                                for(Element element : root.getChildren()) {
+                                    for (int i = 0; i < newStrings.size(); i++) {
+                                        String content = newStrings.get(i);
+                                        if (content == null || content.length() == 0) continue;
+                                        String name = element.getAttributeValue("name");
+                                        if (name.equals(tags.get(i))) {// 发现已经存在同名属性，做更新操作
+                                            content = content.replace("\"", "\\\"");
+                                            content = content.replace("'", "\\'");
+                                            element.removeContent();
+                                            element.addContent(content);
+                                            newStrings.set(i, ""); // 命中更新后，内容设置为空，防止后续再次插入
+                                        }
+                                    }
+                                }
+
                                 for (int i = 0; i < newStrings.size(); i++) {
                                     String content = newStrings.get(i);
                                     if (content == null || content.length() == 0) continue;
@@ -195,13 +208,13 @@ public class StringHandlerAction extends AnAction {
 
                             XMLOutputter out = new XMLOutputter(format);
                             out.output(doc, new FileOutputStream(fileNew));
-                        } catch (JDOMException | IOException e) {
+                        } catch (Exception e) {
                             e.printStackTrace();
                             notifyError("插入异常：" + e.getMessage());
                         }
                     }
                 }
-                notify("插入完成");
+                notify("操作完成");
             } else {
                 notifyError("res 为空目录");
             }
