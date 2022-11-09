@@ -1,6 +1,5 @@
 package com.zhangxq.stringhandler;
 
-import com.intellij.notification.*;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.diagnostic.Logger;
@@ -11,14 +10,19 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.jdom.*;
+import org.jdom.Document;
+import org.jdom.Element;
+import org.jdom.Namespace;
 import org.jdom.input.SAXBuilder;
 import org.jdom.output.Format;
 import org.jdom.output.XMLOutputter;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.util.*;
 
 public class StringHandlerAction extends AnAction {
@@ -26,14 +30,16 @@ public class StringHandlerAction extends AnAction {
     private final Set<String> keys = new HashSet<>(Arrays.asList("EN", "SA", "AR", "ID", "JP", "MY", "BR", "RU", "TH", "TR", "VN", "TW"));
     private static final String TAGS = "Tags";
     public static String fileName = "string_auto.xml";
-    private static int defaultNum = 0;
     private Project project;
 
     @Override
     public void actionPerformed(AnActionEvent e) {
         project = e.getProject();
         if (project != null) {
-            fileChoose(project.getBasePath());
+            new SetNameDialog(project, name -> {
+                fileName = "string_" + name + ".xml";
+                fileChoose(project.getBasePath());
+            }).setVisible(true);
         }
     }
 
@@ -49,23 +55,16 @@ public class StringHandlerAction extends AnAction {
             File file = fileChooser.getSelectedFile();
             logger.debug("项目目录：" + projectPath);
             logger.debug("选择文件：" + file.getAbsolutePath());
-            List<List<String>> excelData = parseXls(file);
-            if (excelData == null) return;
-            if (excelData.size() > 0) {
-                notify("excel解析完成");
-                setValuesToProject(projectPath, excelData);
-            } else {
-                notifyError("解析数据为空");
-            }
+            parseXls(projectPath, file);
         }
     }
 
-    public List<List<String>> parseXls(File excel) {
+    public void parseXls(String projectPath, File excel) {
         try {
             String[] split = excel.getName().split("\\.");
             if (split.length < 2) {
-                notifyError("操作失败：文件名格式错误[" + excel.getName() + "]");
-                return null;
+                NotifyUtil.notifyError("操作失败：文件名格式错误[" + excel.getName() + "]", project);
+                return;
             }
             Workbook wb;
             if ("xls".equals(split[1])) {
@@ -74,38 +73,68 @@ public class StringHandlerAction extends AnAction {
             } else if ("xlsx".equals(split[1])) {
                 wb = new XSSFWorkbook(excel);
             } else {
-                notifyError("操作失败：非excel文件后缀！！");
-                return null;
+                NotifyUtil.notifyError("操作失败：非excel文件后缀！！", project);
+                return;
             }
 
-            Sheet sheet = wb.getSheetAt(0);
-            List<List<String>> result = new ArrayList<>();
-            Row firstRow = sheet.getRow(0);
-            if (firstRow == null) {
-                notifyError("首行为空！！");
-                return null;
-            }
-
-            for (int i = 0; i < sheet.getPhysicalNumberOfRows(); i++) {
-                Row row = sheet.getRow(i);
-                if (row == null) continue;
-                result.add(new ArrayList<>());
-                for (int j = 0; j < firstRow.getPhysicalNumberOfCells(); j++) {
-                    Cell cell = row.getCell(j);
-                    String cellValue = cell == null ? "" : cell.getStringCellValue();
-                    if (cellValue == null || cellValue.isEmpty()) cellValue = "";
-                    if (i == 0) cellValue = cellValue.trim();
-                    result.get(i).add(cellValue);
+            // 展示sheet列表，选择一个
+            int sheetNum = wb.getNumberOfSheets();
+            if (sheetNum > 1) {
+                String[] sheetNames = new String[sheetNum];
+                for (int i = 0; i < sheetNum; i++) {
+                    sheetNames[i] = wb.getSheetName(i);
                 }
+                JDialog dialog = new SheetListDialog(sheetNames, position -> parseSheet(projectPath, wb.getSheetAt(position)));
+                dialog.setVisible(true);
+            } else {
+                parseSheet(projectPath, wb.getSheetAt(0));
             }
+
             wb.close();
-            return result;
         } catch (Exception e) {
-            notifyError("解析异常：" + e.getMessage());
-            return null;
+            NotifyUtil.notifyError("解析异常：" + e.getMessage(), project);
         }
     }
 
+    /**
+     * 解析 sheet
+     * @param projectPath
+     * @param sheet
+     */
+    private void parseSheet(String projectPath, Sheet sheet) {
+        List<List<String>> result = new ArrayList<>();
+        Row firstRow = sheet.getRow(0);
+        if (firstRow == null) {
+            NotifyUtil.notifyError("首行为空！！", project);
+            return;
+        }
+
+        for (int i = 0; i < sheet.getPhysicalNumberOfRows(); i++) {
+            Row row = sheet.getRow(i);
+            if (row == null) continue;
+            result.add(new ArrayList<>());
+            for (int j = 0; j < firstRow.getPhysicalNumberOfCells(); j++) {
+                Cell cell = row.getCell(j);
+                String cellValue = cell == null ? "" : cell.getStringCellValue();
+                if (cellValue == null || cellValue.isEmpty()) cellValue = "";
+                if (i == 0) cellValue = cellValue.trim();
+                result.get(i).add(cellValue);
+            }
+        }
+
+        if (result.size() > 0) {
+            NotifyUtil.notify("excel解析完成", project);
+            setValuesToProject(projectPath, result);
+        } else {
+            NotifyUtil.notifyError("解析数据为空", project);
+        }
+    }
+
+    /**
+     * 根据解析出的sheet结果，导入到excel中
+     * @param projectPath
+     * @param data
+     */
     private void setValuesToProject(String projectPath, List<List<String>> data) {
         projectPath = projectPath + "/app/src/main/res";
 //        projectPath = "/Users/zhangxq/work/litmatch_app/app/src/main/res";
@@ -120,7 +149,7 @@ public class StringHandlerAction extends AnAction {
                 List<String> tops = data.get(0); // excel第一行
                 for (int i = 0; i < tops.size(); i++) {
                     String top = tops.get(i);
-                    if (top.equals(TAGS) || keys.contains(top)) { // 如果是 Tags，或者包含在预定义语言类型中，
+                    if (top.equals(TAGS) || keys.contains(top)) { // 如果是 Tags，或者包含在预定义语言类型中，就是有效数据，需要保存
                         dataMap.put(top, new ArrayList<>());
                         columnMap.put(i, top);
                     }
@@ -133,8 +162,11 @@ public class StringHandlerAction extends AnAction {
                             String cell = datum.get(j);
                             String key = columnMap.get(j);
                             if (key.equals(TAGS)) {
-                                if (cell == null || cell.isEmpty()) cell = "tag_" + System.currentTimeMillis() + "_" + defaultNum++;
-                                tags.add(cell);
+                                if (cell != null && !cell.isEmpty()) {
+                                    tags.add(cell);
+                                } else {
+                                    break;
+                                }
                             } else {
                                 dataMap.get(columnMap.get(j)).add(cell);
                             }
@@ -210,16 +242,16 @@ public class StringHandlerAction extends AnAction {
                             out.output(doc, new FileOutputStream(fileNew));
                         } catch (Exception e) {
                             e.printStackTrace();
-                            notifyError("插入异常：" + e.getMessage());
+                            NotifyUtil.notifyError("插入异常：" + e.getMessage(), project);
                         }
                     }
                 }
-                notify("操作完成");
+                NotifyUtil.notify("操作完成", project);
             } else {
-                notifyError("res 为空目录");
+                NotifyUtil.notifyError("res 为空目录", project);
             }
         } else {
-            notifyError("res 目录不存在");
+            NotifyUtil.notifyError("res 目录不存在", project);
         }
     }
 
@@ -229,19 +261,5 @@ public class StringHandlerAction extends AnAction {
         public boolean accept(File dir, String name) {
             return name.equals(fileName);
         }
-    }
-
-    private void notify(String content) {
-        NotificationGroupManager.getInstance()
-                .getNotificationGroup("StringHandler")
-                .createNotification(content, NotificationType.INFORMATION)
-                .notify(project);
-    }
-
-    private void notifyError(String content) {
-        NotificationGroupManager.getInstance()
-                .getNotificationGroup("StringHandler")
-                .createNotification(content, NotificationType.ERROR)
-                .notify(project);
     }
 }
