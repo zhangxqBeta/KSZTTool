@@ -5,10 +5,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.jdom.Document;
 import org.jdom.Element;
@@ -115,10 +112,13 @@ public class StringHandlerAction extends AnAction {
             result.add(new ArrayList<>());
             for (int j = 0; j < firstRow.getPhysicalNumberOfCells(); j++) {
                 Cell cell = row.getCell(j);
-                String cellValue = cell == null ? "" : cell.getStringCellValue();
-                if (cellValue == null || cellValue.isEmpty()) cellValue = "";
-                if (i == 0) cellValue = cellValue.trim();
-                result.get(i).add(cellValue);
+                if (cell != null) {
+                    cell.setCellType(CellType.STRING);
+                    String cellValue = cell.getStringCellValue();
+                    if (cellValue == null || cellValue.isEmpty()) cellValue = "";
+                    if (i == 0) cellValue = cellValue.trim();
+                    result.get(i).add(cellValue);
+                }
             }
         }
 
