@@ -107,9 +107,9 @@ public class StringHandlerAction extends AnAction {
         }
 
         for (int i = 0; i < sheet.getPhysicalNumberOfRows(); i++) {
-            Row row = sheet.getRow(i);
-            if (row == null) continue;
             result.add(new ArrayList<>());
+            Row row = sheet.getRow(i);
+            if (row == null) break;
             for (int j = 0; j < firstRow.getPhysicalNumberOfCells(); j++) {
                 Cell cell = row.getCell(j);
                 if (cell != null) {
