@@ -118,6 +118,8 @@ public class StringHandlerAction extends AnAction {
                     if (cellValue == null || cellValue.isEmpty()) cellValue = "";
                     if (i == 0) cellValue = cellValue.trim();
                     result.get(i).add(cellValue);
+                } else {
+                    result.get(i).add("");
                 }
             }
         }
