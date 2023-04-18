@@ -145,10 +145,21 @@ public class StringHandlerAction extends AnAction {
         if (file.exists()) {
             File[] files = file.listFiles();
             if (files != null) {
+                // key = "EN", value = ["aa", "bb", "cc", "dd"]
+                // key = "BR", value = ["ee", "ff", "gg", "hh"]
+                // key = "AR", value = ["ii", "jj", "kk", "ll"]
+                // ......
                 Map<String, List<String>> dataMap = new HashMap<>(); // 保存过滤后的有效数据
+                // key = 3, value = "Tags"
+                // key = 4, value = "EN"
+                // key = 5, value = "MY"
+                // ......
                 Map<Integer, String> columnMap = new HashMap<>(); // 保存行号和语言的对应关系
+                // ["name1", "name2", "name3", "name4"]
                 List<String> tags = new ArrayList<>(); // 保存自定义tag列表
+                // ["功能模块", "页面", "中文", "Tags", "EN", "MY"]
                 List<String> tops = data.get(0); // excel第一行
+
                 for (int i = 0; i < tops.size(); i++) {
                     String top = tops.get(i);
                     if (top.equals(TAGS) || keys.contains(top)) { // 如果是 Tags，或者包含在预定义语言类型中，就是有效数据，需要保存
@@ -176,85 +187,151 @@ public class StringHandlerAction extends AnAction {
                     }
                 }
 
-                for (File item : files) {
-                    String pathName = item.getName();
-                    String pathNameSuffix = pathName.substring(pathName.length() - 2);
-                    if (item.getName().equals("values") || keys.contains(pathNameSuffix)) {
-                        logger.debug("目录：" + item.getAbsolutePath());
-                        File[] stringFiles = item.listFiles(filenameFilter);
+                List<String> enList = dataMap.get("EN");
+                if (enList == null || enList.size() == 0) {
+                    NotifyUtil.notifyError("EN列不能为空", project);
+                    return;
+                }
 
-                        try {
-                            SAXBuilder builder = new SAXBuilder();
-                            File fileNew;
-                            Document doc;
-                            Element root;
-                            if (stringFiles == null || stringFiles.length == 0) {
-                                fileNew = new File(item.getAbsolutePath() + "/" + fileName);
-                                boolean isSuccess = fileNew.createNewFile();
-                                if (!isSuccess) continue;
-                                doc = new Document();
-                                root = new Element("resources");
-                                Namespace tools = Namespace.getNamespace("tools", "http://schemas.android.com/tools");
-                                root.addNamespaceDeclaration(tools);
-                                root.setAttribute("ignore", "MissingTranslation", tools);
-                                doc.setRootElement(root);
-                            } else {
-                                fileNew = stringFiles[0];
-                                doc = builder.build(fileNew);
-                                root = doc.getRootElement();
-                            }
+                checkFormat(dataMap, new ActionDialog.Callback() {
+                    @Override
+                    public void onContinue() {
+                        for (File item : files) {
+                            String pathName = item.getName();
+                            String pathNameSuffix = pathName.substring(pathName.length() - 2);
+                            if (item.getName().equals("values") || keys.contains(pathNameSuffix)) {
+                                logger.debug("目录：" + item.getAbsolutePath());
+                                File[] stringFiles = item.listFiles(filenameFilter);
 
-                            List<String> newStrings = dataMap.get(pathNameSuffix);
-                            if (item.getName().equals("values")) newStrings = dataMap.get("EN");
-                            if (newStrings != null && newStrings.size() == tags.size()) {
-                                // 更新操作
-                                for(Element element : root.getChildren()) {
-                                    for (int i = 0; i < newStrings.size(); i++) {
-                                        String content = newStrings.get(i);
-                                        if (content == null || content.length() == 0) continue;
-                                        String name = element.getAttributeValue("name");
-                                        if (name.equals(tags.get(i))) {// 发现已经存在同名属性，做更新操作
+                                try {
+                                    SAXBuilder builder = new SAXBuilder();
+                                    File fileNew;
+                                    Document doc;
+                                    Element root;
+                                    if (stringFiles == null || stringFiles.length == 0) {
+                                        fileNew = new File(item.getAbsolutePath() + "/" + fileName);
+                                        boolean isSuccess = fileNew.createNewFile();
+                                        if (!isSuccess) continue;
+                                        doc = new Document();
+                                        root = new Element("resources");
+                                        Namespace tools = Namespace.getNamespace("tools", "http://schemas.android.com/tools");
+                                        root.addNamespaceDeclaration(tools);
+                                        root.setAttribute("ignore", "MissingTranslation", tools);
+                                        doc.setRootElement(root);
+                                    } else {
+                                        fileNew = stringFiles[0];
+                                        doc = builder.build(fileNew);
+                                        root = doc.getRootElement();
+                                    }
+
+                                    List<String> newStrings = dataMap.get(pathNameSuffix);
+                                    if (item.getName().equals("values")) newStrings = dataMap.get("EN");
+                                    if (newStrings != null && newStrings.size() == tags.size()) {
+                                        // 更新操作
+                                        for(Element element : root.getChildren()) {
+                                            for (int i = 0; i < newStrings.size(); i++) {
+                                                String content = newStrings.get(i);
+                                                if (content == null || content.length() == 0) continue;
+                                                String name = element.getAttributeValue("name");
+                                                if (name.equals(tags.get(i))) {// 发现已经存在同名属性，做更新操作
+                                                    content = content.replace("\"", "\\\"");
+                                                    content = content.replace("'", "\\'");
+                                                    element.removeContent();
+                                                    element.addContent(content);
+                                                    newStrings.set(i, ""); // 命中更新后，内容设置为空，防止后续再次插入
+                                                }
+                                            }
+                                        }
+
+                                        for (int i = 0; i < newStrings.size(); i++) {
+                                            String content = newStrings.get(i);
+                                            if (content == null || content.length() == 0) continue;
                                             content = content.replace("\"", "\\\"");
                                             content = content.replace("'", "\\'");
-                                            element.removeContent();
-                                            element.addContent(content);
-                                            newStrings.set(i, ""); // 命中更新后，内容设置为空，防止后续再次插入
+                                            Element stringItem = new Element("string");
+                                            stringItem.setAttribute("name", tags.get(i));
+                                            stringItem.addContent(content);
+                                            root.addContent(stringItem);
                                         }
                                     }
-                                }
 
-                                for (int i = 0; i < newStrings.size(); i++) {
-                                    String content = newStrings.get(i);
-                                    if (content == null || content.length() == 0) continue;
-                                    content = content.replace("\"", "\\\"");
-                                    content = content.replace("'", "\\'");
-                                    Element stringItem = new Element("string");
-                                    stringItem.setAttribute("name", tags.get(i));
-                                    stringItem.addContent(content);
-                                    root.addContent(stringItem);
+                                    Format format= Format.getCompactFormat();
+                                    format.setEncoding("utf-8");
+                                    format.setIndent("    ");
+                                    format.setLineSeparator("\n");
+
+                                    XMLOutputter out = new XMLOutputter(format);
+                                    out.output(doc, new FileOutputStream(fileNew));
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                    NotifyUtil.notifyError("插入异常：" + e.getMessage(), project);
                                 }
                             }
-
-                            Format format= Format.getCompactFormat();
-                            format.setEncoding("utf-8");
-                            format.setIndent("    ");
-                            format.setLineSeparator("\n");
-
-                            XMLOutputter out = new XMLOutputter(format);
-                            out.output(doc, new FileOutputStream(fileNew));
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                            NotifyUtil.notifyError("插入异常：" + e.getMessage(), project);
                         }
+                        NotifyUtil.notify("操作完成", project);
                     }
-                }
-                NotifyUtil.notify("操作完成", project);
+
+                    @Override
+                    public void onCancel() {
+                        NotifyUtil.notify("已取消", project);
+                    }
+                });
             } else {
                 NotifyUtil.notifyError("res 为空目录", project);
             }
         } else {
             NotifyUtil.notifyError("res 目录不存在", project);
         }
+    }
+
+    private void checkFormat(Map<String, List<String>> dataMap, ActionDialog.Callback callback) {
+        int size = dataMap.get("EN").size();
+        // 检查 %s 个数是否一致
+        boolean isWrong = doCheck(size, "%s", dataMap, callback);
+        if (isWrong) return;
+        // 检查 %d 个数是否一致
+        isWrong = doCheck(size, "%d", dataMap, callback);
+        if (isWrong) return;
+
+        // 检查没问题，继续导入
+        callback.onContinue();
+    }
+
+    private boolean doCheck(int size, String formatStr, Map<String, List<String>> dataMap, ActionDialog.Callback callback) {
+        for (int i = 0; i < size; i++) {
+            // 计算英语翻译中 %s 个数
+            int countSEN = getSubStrCount(dataMap.get("EN").get(i), formatStr);
+            for (String key : dataMap.keySet()) {
+                if (dataMap.get(key) == null || dataMap.get(key).size() <= i || dataMap.get(key).get(i).length() == 0) continue;
+                String content = dataMap.get(key).get(i);
+                // 计算其他翻译中 %s 个数
+                int countSItem = getSubStrCount(content, formatStr);
+                // 如果 %s 个数不相等，则存在问题
+                if (countSItem != countSEN) {
+                    String title;
+                    if (countSItem < countSEN) {
+                        // 如果当前翻译 %s 个数少于英语翻译，提示当前翻译有误
+                        title = "<html><body>国家：" + key + "<br>内容：" + content + "<br>" + "错误：[可能缺少" + (countSEN - countSItem) + "个 " + formatStr + "]" + "<body></html>";
+                    } else {
+                        // 如果当前翻译 %s 个数大于英语翻译，提示当前英语有误
+                        title = "<html><body>国家：EN<br>内容：" + dataMap.get("EN").get(i) + "<br>" + "错误：[可能缺少" + (countSItem - countSEN) + "个 " + formatStr + "]" + "<body></html>";
+                    }
+                    new ActionDialog(title, callback).setVisible(true);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private int getSubStrCount(String content, String subStr) {
+        int count = 0;
+        for (int i = 0; i <= content.length() - subStr.length(); i++) {
+            if (content.startsWith(subStr, i)) {
+                count++;
+            }
+        }
+        return count;
     }
 
     private static class StringsNameFilter implements FilenameFilter {
