@@ -45,8 +45,10 @@
     </extensions>
 
     <actions>
-        <action id="stringHandlerAction" class="com.zhangxq.stringhandler.StringHandlerAction" text="多语言导入" description="StringHandler">
-            <add-to-group group-id="HelpMenu" anchor="last"/>
-        </action>
+        <group id="LitTool" text="LitTool" description="LitTool">
+            <add-to-group group-id="MainMenu" anchor="last"/>
+            <action id="stringHandlerAction" class="com.zhangxq.stringhandler.StringHandlerAction" text="多语言导入" description="StringHandler"/>
+            <action id="colorNameFinder" class="com.zhangxq.colorfinder.ColorNameFinder" text="颜色查找" description="FindColorName"/>
+        </group>
     </actions>
 </idea-plugin>

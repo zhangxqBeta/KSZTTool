@@ -1,4 +1,4 @@
-package com.zhangxq.stringhandler;
+package com.zhangxq;
 
 import com.intellij.notification.NotificationGroupManager;
 import com.intellij.notification.NotificationType;

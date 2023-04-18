@@ -4,6 +4,7 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.zhangxq.NotifyUtil;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -137,65 +138,65 @@ public class StringHandlerAction extends AnAction {
      * @param projectPath
      * @param data
      */
-    private void setValuesToProject(String projectPath, List<List<String>> data) {
-        projectPath = projectPath + "/app/src/main/res";
-//        projectPath = "/Users/zhangxq/work/litmatch_app/app/src/main/res";
-        File file = new File(projectPath);
-        FilenameFilter filenameFilter = new StringsNameFilter();
-        if (file.exists()) {
-            File[] files = file.listFiles();
-            if (files != null) {
-                // key = "EN", value = ["aa", "bb", "cc", "dd"]
-                // key = "BR", value = ["ee", "ff", "gg", "hh"]
-                // key = "AR", value = ["ii", "jj", "kk", "ll"]
-                // ......
-                Map<String, List<String>> dataMap = new HashMap<>(); // 保存过滤后的有效数据
-                // key = 3, value = "Tags"
-                // key = 4, value = "EN"
-                // key = 5, value = "MY"
-                // ......
-                Map<Integer, String> columnMap = new HashMap<>(); // 保存行号和语言的对应关系
-                // ["name1", "name2", "name3", "name4"]
-                List<String> tags = new ArrayList<>(); // 保存自定义tag列表
-                // ["功能模块", "页面", "中文", "Tags", "EN", "MY"]
-                List<String> tops = data.get(0); // excel第一行
+    private void setValuesToProject(final String projectPath, List<List<String>> data) {
+        // key = "EN", value = ["aa", "bb", "cc", "dd"]
+        // key = "BR", value = ["ee", "ff", "gg", "hh"]
+        // key = "AR", value = ["ii", "jj", "kk", "ll"]
+        // ......
+        Map<String, List<String>> dataMap = new HashMap<>(); // 保存过滤后的有效数据
+        // key = 3, value = "Tags"
+        // key = 4, value = "EN"
+        // key = 5, value = "MY"
+        // ......
+        Map<Integer, String> columnMap = new HashMap<>(); // 保存行号和语言的对应关系
+        // ["name1", "name2", "name3", "name4"]
+        List<String> tags = new ArrayList<>(); // 保存自定义tag列表
+        // ["功能模块", "页面", "中文", "Tags", "EN", "MY"]
+        List<String> tops = data.get(0); // excel第一行
 
-                for (int i = 0; i < tops.size(); i++) {
-                    String top = tops.get(i);
-                    if (top.equals(TAGS) || keys.contains(top)) { // 如果是 Tags，或者包含在预定义语言类型中，就是有效数据，需要保存
-                        dataMap.put(top, new ArrayList<>());
-                        columnMap.put(i, top);
-                    }
-                }
+        for (int i = 0; i < tops.size(); i++) {
+            String top = tops.get(i);
+            if (top.equals(TAGS) || keys.contains(top)) { // 如果是 Tags，或者包含在预定义语言类型中，就是有效数据，需要保存
+                dataMap.put(top, new ArrayList<>());
+                columnMap.put(i, top);
+            }
+        }
 
-                for (int i = 1; i < data.size(); i++) {
-                    List<String> datum = data.get(i);
-                    for (int j = 0; j < datum.size(); j++) {
-                        if (columnMap.containsKey(j)) {
-                            String cell = datum.get(j);
-                            String key = columnMap.get(j);
-                            if (key.equals(TAGS)) {
-                                if (cell != null && !cell.isEmpty()) {
-                                    tags.add(cell);
-                                } else {
-                                    break;
-                                }
-                            } else {
-                                dataMap.get(columnMap.get(j)).add(cell);
-                            }
+        for (int i = 1; i < data.size(); i++) {
+            List<String> datum = data.get(i);
+            for (int j = 0; j < datum.size(); j++) {
+                if (columnMap.containsKey(j)) {
+                    String cell = datum.get(j);
+                    String key = columnMap.get(j);
+                    if (key.equals(TAGS)) {
+                        if (cell != null && !cell.isEmpty()) {
+                            tags.add(cell);
+                        } else {
+                            break;
                         }
+                    } else {
+                        dataMap.get(columnMap.get(j)).add(cell);
                     }
                 }
+            }
+        }
 
-                List<String> enList = dataMap.get("EN");
-                if (enList == null || enList.size() == 0) {
-                    NotifyUtil.notifyError("EN列不能为空", project);
-                    return;
-                }
+        List<String> enList = dataMap.get("EN");
+        if (enList == null || enList.size() == 0) {
+            NotifyUtil.notifyError("EN列不能为空", project);
+            return;
+        }
 
-                checkFormat(dataMap, new ActionDialog.Callback() {
-                    @Override
-                    public void onContinue() {
+        checkFormat(dataMap, new ActionDialog.Callback() {
+            @Override
+            public void onContinue() {
+                String filePath = projectPath + "/app/src/main/res";
+//                String filePath = "/Users/zhangxq/work/litmatch_app/app/src/main/res";
+                File file = new File(filePath);
+                FilenameFilter filenameFilter = new StringsNameFilter();
+                if (file.exists()) {
+                    File[] files = file.listFiles();
+                    if (files != null) {
                         for (File item : files) {
                             String pathName = item.getName();
                             String pathNameSuffix = pathName.substring(pathName.length() - 2);
@@ -269,19 +270,19 @@ public class StringHandlerAction extends AnAction {
                             }
                         }
                         NotifyUtil.notify("操作完成", project);
+                    } else {
+                        NotifyUtil.notifyError("res 为空目录", project);
                     }
-
-                    @Override
-                    public void onCancel() {
-                        NotifyUtil.notify("已取消", project);
-                    }
-                });
-            } else {
-                NotifyUtil.notifyError("res 为空目录", project);
+                } else {
+                    NotifyUtil.notifyError("res 目录不存在", project);
+                }
             }
-        } else {
-            NotifyUtil.notifyError("res 目录不存在", project);
-        }
+
+            @Override
+            public void onCancel() {
+                NotifyUtil.notify("已取消", project);
+            }
+        });
     }
 
     private void checkFormat(Map<String, List<String>> dataMap, ActionDialog.Callback callback) {

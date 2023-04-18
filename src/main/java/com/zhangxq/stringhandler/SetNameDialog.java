@@ -2,6 +2,7 @@ package com.zhangxq.stringhandler;
 
 import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.openapi.project.Project;
+import com.zhangxq.NotifyUtil;
 
 import javax.swing.*;
 import java.awt.*;
