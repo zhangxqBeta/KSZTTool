@@ -17,13 +17,12 @@
         <![CDATA[
             <html>
                 <body>
-                    选择excel文件，自动导入里面的多语言，导入后放置在 string_auto.xml 中 </br>
-                    excel 格式要求：</br>
-
+                    KSZT 工具插件：
                     <ul>
-                      <li>第一行为：Tags|EN|MY|PH|TH.......</li>
-                      <li>Tags 列需自定义字段名称，没有自定义名称的行，自动跳过</li>
+                      <li>多语言导入：下载 xls 或者 xlsx 文件，设置名称后自动导入</li>
+                      <li>颜色查找和添加：根据亮色和暗色查到对应的颜色名称</li>
                     </ul>
+                    <a href="https://v6527g89pb.feishu.cn/wiki/wikcneRJyP56ZZLzlPJqQzTM4Se">使用文档</a>
                 </body>
             </html>
         ]]>
@@ -45,7 +44,7 @@
     </extensions>
 
     <actions>
-        <group id="LitTool" text="LitTool" description="LitTool">
+        <group id="KSZTTool" text="KSZTTool" description="KSZTTool">
             <add-to-group group-id="MainMenu" anchor="last"/>
             <action id="stringHandlerAction" class="com.zhangxq.stringhandler.StringHandlerAction" text="多语言导入" description="StringHandler"/>
             <action id="colorNameFinder" class="com.zhangxq.colorfinder.ColorNameFinder" text="颜色查找" description="FindColorName"/>
