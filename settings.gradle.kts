@@ -1,1 +1,1 @@
-rootProject.name = "StringHandler"
+rootProject.name = "KSZTTool"
