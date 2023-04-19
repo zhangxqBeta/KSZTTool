@@ -21,23 +21,23 @@ public class ColorCheckDialog extends JDialog {
     private JTextField tfLightColor;
     private JTextField tfNightColor;
     private JTextArea taResult;
+    private JScrollPane jsPanel;
     private final Project project;
     private final List<File> allColorFileList = new ArrayList<>();
 
     public ColorCheckDialog(Project project) {
         this.project = project;
         setContentPane(contentPane);
-        setModal(true);
         getRootPane().setDefaultButton(btnSearch);
 
-        setMinimumSize(new Dimension(300, 190));
-        setMaximumSize(new Dimension(300, 190));
+        setMinimumSize(new Dimension(400, 190));
+        setMaximumSize(new Dimension(400, 190));
         Toolkit kit = Toolkit.getDefaultToolkit();
-        setLocation(kit.getScreenSize().width / 2 - 150, kit.getScreenSize().height / 2 - 100);
+        setLocation(kit.getScreenSize().width / 2 - 200, kit.getScreenSize().height / 2 - 100);
 
-        taResult.setMinimumSize(new Dimension(280, 200));
+        jsPanel.setMinimumSize(new Dimension(280, 200));
+        jsPanel.setVisible(false);
         taResult.setEditable(false);
-        taResult.setVisible(false);
 
         btnSearch.addActionListener(e -> {
             String lightColor = tfLightColor.getText().trim();
@@ -50,9 +50,9 @@ public class ColorCheckDialog extends JDialog {
 
             List<String> result = findColor(lightColor, nightColor);
             if (result.size() > 0) {
-                setMinimumSize(new Dimension(300, 390));
-                setMaximumSize(new Dimension(300, 390));
-                taResult.setVisible(true);
+                setMinimumSize(new Dimension(400, 390));
+                setMaximumSize(new Dimension(400, 390));
+                jsPanel.setVisible(true);
                 StringBuilder resultContent = new StringBuilder();
                 resultContent.append("查询到以下可用颜色：").append("\n");
                 for (String str : result) {
@@ -63,7 +63,8 @@ public class ColorCheckDialog extends JDialog {
                 }
                 taResult.setText(resultContent.toString());
             } else {
-                NotifyUtil.notify("未找到", project);
+                dispose();
+                new ColorAddDialog(lightColor, nightColor, project).setVisible(true);
             }
         });
 
