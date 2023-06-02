@@ -191,7 +191,6 @@ public class StringHandlerAction extends AnAction {
             @Override
             public void onContinue() {
                 String filePath = projectPath + "/app/src/main/res";
-//                String filePath = "/Users/zhangxq/work/litmatch_app/app/src/main/res";
                 File file = new File(filePath);
                 FilenameFilter filenameFilter = new StringsNameFilter();
                 if (file.exists()) {

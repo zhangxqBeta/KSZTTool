@@ -44,7 +44,6 @@ public class ColorAddDialog extends JDialog {
             }
 
             String filePath = project.getBasePath() + "/app/src/main/res";
-//            String filePath = "/Users/zhangxq/work/litmatch_app/app/src/main/res";
             File file = new File(filePath);
             if (file.exists()) {
                 File[] files = file.listFiles();

@@ -79,7 +79,6 @@ public class ColorCheckDialog extends JDialog {
 
     private List<String> findColor(String lightColor, String nightColor) {
         File file = new File(project.getBasePath() + "/app/src/main/res");
-//        File file = new File("/Users/zhangxq/work/litmatch_app/app/src/main/res");
         if (file.exists()) {
             findFile(file);
         }
