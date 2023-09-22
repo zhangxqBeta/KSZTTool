@@ -5,13 +5,14 @@ import com.intellij.ui.components.JBList;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.List;
 
-public class SheetListDialog extends JDialog {
+public class ModuleListDialog extends JDialog {
     private JPanel contentPane;
-    private JScrollPane jScrollPanel;
     private JLabel jLabelTitle;
+    private JScrollPane jScrollPanel;
 
-    public SheetListDialog(String[] sheetNames, Callback callback) {
+    public ModuleListDialog(List<String> moduleNames, Callback callback) {
         setContentPane(contentPane);
         setModal(true);
 
@@ -22,7 +23,7 @@ public class SheetListDialog extends JDialog {
         setLocation(kit.getScreenSize().width / 2 - 150, kit.getScreenSize().height / 2 - 250);
 
         jScrollPanel.setSize(new Dimension(300, 500));
-        ListModel<String> jListModel =  new DefaultComboBoxModel<>(sheetNames);
+        ListModel<String> jListModel =  new DefaultComboBoxModel<>(moduleNames.toArray(new String[0]));
         JBList<String> jbList = new JBList<>(jListModel);
         jScrollPanel.setViewportView(jbList);
         jbList.addMouseListener(new MouseAdapter() {

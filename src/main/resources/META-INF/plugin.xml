@@ -21,6 +21,7 @@
                     <ul>
                       <li>多语言导入：下载 xls 或者 xlsx 文件，设置名称后自动导入</li>
                       <li>颜色查找和添加：根据亮色和暗色查到对应的颜色名称</li>
+                      <li>切换本地依赖和远程依赖</li>
                     </ul>
                     <a href="https://v6527g89pb.feishu.cn/wiki/wikcneRJyP56ZZLzlPJqQzTM4Se">使用文档</a>
                 </body>

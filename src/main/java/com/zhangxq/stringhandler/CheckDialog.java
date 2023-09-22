@@ -4,13 +4,13 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 
-public class ActionDialog extends JDialog {
+public class CheckDialog extends JDialog {
     private JPanel contentPane;
     private JButton btnCancel;
     private JButton btnContinue;
     private JLabel labelTitle;
 
-    public ActionDialog(String title, Callback callback) {
+    public CheckDialog(String title, Callback callback) {
         setContentPane(contentPane);
         setModal(true);
         getRootPane().setDefaultButton(btnContinue);
@@ -25,17 +25,13 @@ public class ActionDialog extends JDialog {
 
 
         btnCancel.addActionListener(e -> {
-            if (callback != null) {
-                callback.onCancel();
-            }
             dispose();
+            if (callback != null) callback.onCancel();
         });
 
         btnContinue.addActionListener(e -> {
-            if (callback != null) {
-                callback.onContinue();
-            }
             dispose();
+            if (callback != null) callback.onContinue();
         });
 
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
