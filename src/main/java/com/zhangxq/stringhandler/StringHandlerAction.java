@@ -24,8 +24,9 @@ public class StringHandlerAction extends AnAction {
     private static final Logger logger = Logger.getInstance(StringHandlerAction.class);
     private final Set<String> keys = new HashSet<>(Arrays.asList("EN", "SA", "AR", "ID", "JP", "MY", "BR", "RU", "TH", "TR", "VN", "TW"));
     private final Set<String> languageKeys = new HashSet<>(Arrays.asList("ar-rSA", "es-rAR", "in-rID", "ja-rJP", "ms-rMY", "pt-rBR", "ru-rRU", "th-rTH", "tr-rTR", "vi-rVN", "zh-rTW"));
-    private static final String TAGS = "Tags";
-    private String destFileName = "string_auto.xml";
+    private static final String TAGS = "android";
+    private String destFileName;
+    private String oldDestFileName; // 旧文件名（格式为：string_xxx.xml，新版本修复为：strings_xxx.xml）
     private String destPath;
     private Project project;
     private String projectPath;
@@ -74,7 +75,8 @@ public class StringHandlerAction extends AnAction {
      */
     private void setDestFileName() {
         new SetNameDialog(project, name -> {
-            destFileName = "string_" + name + ".xml";
+            destFileName = "strings_" + name + ".xml";
+            oldDestFileName = "string_" + name + ".xml";
             fileChoose();
         }).setVisible(true);
     }
@@ -194,7 +196,7 @@ public class StringHandlerAction extends AnAction {
 
         for (int i = 0; i < tops.size(); i++) {
             String top = tops.get(i);
-            if (top.equals(TAGS) || keys.contains(top.toUpperCase())) { // 如果是 Tags，或者包含在预定义语言类型中，就是有效数据，需要保存
+            if (TAGS.equalsIgnoreCase(top)|| keys.contains(top.toUpperCase())) { // 如果是 Tags，或者包含在预定义语言类型中，就是有效数据，需要保存
                 dataMap.put(top, new ArrayList<>());
                 columnMap.put(i, top);
             }
@@ -206,7 +208,7 @@ public class StringHandlerAction extends AnAction {
                 if (columnMap.containsKey(j)) {
                     String cell = datum.get(j);
                     String key = columnMap.get(j);
-                    if (key.equals(TAGS)) {
+                    if (key.equalsIgnoreCase(TAGS)) {
                         if (cell != null && !cell.isEmpty()) {
                             tags.add(cell);
                         } else {
@@ -291,13 +293,20 @@ public class StringHandlerAction extends AnAction {
                     String pathNameSuffix = pathName.substring(pathName.length() - 2);
                     if (item.getName().equals("values") || keys.contains(pathNameSuffix)) {
                         logger.debug("目录：" + item.getAbsolutePath());
-                        File[] stringFiles = item.listFiles(new DestFileNameFilter());
 
                         try {
                             SAXBuilder builder = new SAXBuilder();
                             File fileNew;
                             Document doc;
                             Element root;
+
+                            File[] oldStringFiles = item.listFiles(new OldDestNameFilter());
+                            if (oldStringFiles != null && oldStringFiles.length > 0) {
+                                File oldStringFile = oldStringFiles[0];
+                                boolean ignore = oldStringFile.renameTo(new File(item.getAbsolutePath() + "/" + destFileName));
+                            }
+
+                            File[] stringFiles = item.listFiles(new DestFileNameFilter());
                             if (stringFiles == null || stringFiles.length == 0) {
                                 fileNew = new File(item.getAbsolutePath() + "/" + destFileName);
                                 boolean isSuccess = fileNew.createNewFile();
@@ -430,35 +439,41 @@ public class StringHandlerAction extends AnAction {
     }
 
     private class DestFileNameFilter implements FilenameFilter {
-
         @Override
         public boolean accept(File dir, String name) {
             return name.equals(destFileName);
         }
     }
 
-    private class DirectoryFilter implements FileFilter {
+    private class OldDestNameFilter implements FilenameFilter {
+        @Override
+        public boolean accept(File dir, String name) {
+            return name.equals(oldDestFileName);
+        }
+    }
+
+    private static class DirectoryFilter implements FileFilter {
         @Override
         public boolean accept(File file) {
             return file.isDirectory();
         }
     }
 
-    private class SettingGradleNameFilter implements FilenameFilter {
+    private static class SettingGradleNameFilter implements FilenameFilter {
         @Override
         public boolean accept(File dir, String name) {
             return name.equals("settings.gradle");
         }
     }
 
-    private class BuildGradleNameFilter implements FilenameFilter {
+    private static class BuildGradleNameFilter implements FilenameFilter {
         @Override
         public boolean accept(File dir, String name) {
             return name.equals("build.gradle");
         }
     }
 
-    private class SrcNameFilter implements FilenameFilter {
+    private static class SrcNameFilter implements FilenameFilter {
         @Override
         public boolean accept(File dir, String name) {
             return name.equals("src");
