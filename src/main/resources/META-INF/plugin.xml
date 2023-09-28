@@ -40,8 +40,8 @@
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij">
-        <notificationGroup displayType="BALLOON" id="StringHandler" />
-        <notificationGroup displayType="BALLOON" id="StringHandlerError" />
+        <notificationGroup displayType="BALLOON" id="KSZTTool" />
+        <notificationGroup displayType="BALLOON" id="KSZTToolError" />
     </extensions>
 
     <actions>
