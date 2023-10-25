@@ -155,8 +155,12 @@ public class StringHandlerAction extends AnAction {
             for (int j = 0; j < firstRow.getPhysicalNumberOfCells(); j++) {
                 Cell cell = row.getCell(j);
                 if (cell != null) {
-                    cell.setCellType(CellType.STRING);
-                    String cellValue = cell.getStringCellValue();
+                    String cellValue = "";
+                    if (cell.getCellType() == CellType.STRING) {
+                        cellValue = cell.getStringCellValue();
+                    } else if (cell.getCellType() == CellType.NUMERIC) {
+                        cellValue = cell.getNumericCellValue() + "";
+                    }
                     if (cellValue == null || cellValue.isEmpty()) cellValue = "";
                     if (i == 0) cellValue = cellValue.trim();
                     result.get(i).add(cellValue);
