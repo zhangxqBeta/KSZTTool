@@ -330,31 +330,18 @@ public class StringHandlerAction extends AnAction {
                             List<String> newStrings = dataMap.get(pathNameSuffix);
                             if (item.getName().equals("values")) newStrings = dataMap.get("EN");
                             if (newStrings != null && newStrings.size() == tags.size()) {
-                                // 更新操作
-                                for(Element element : root.getChildren()) {
-                                    for (int i = 0; i < newStrings.size(); i++) {
+                                for (int i = 0; i < newStrings.size(); i++) {
+                                    String name = tags.get(i);
+                                    if (name.startsWith("*")) {
+                                        removeElementByName(name.replace("*", ""), root);
+                                    } else {
                                         String content = newStrings.get(i);
                                         if (content == null || content.length() == 0) continue;
-                                        String name = element.getAttributeValue("name");
-                                        if (name.equals(tags.get(i))) {// 发现已经存在同名属性，做更新操作
-                                            content = content.replace("\"", "\\\"");
-                                            content = content.replace("'", "\\'");
-                                            element.removeContent();
-                                            element.addContent(content);
-                                            newStrings.set(i, ""); // 命中更新后，内容设置为空，防止后续再次插入
-                                        }
+                                        content = content.replace("\"", "\\\"");
+                                        content = content.replace("'", "\\'");
+                                        Element element = getElementByName(name, root);
+                                        element.addContent(content);
                                     }
-                                }
-
-                                for (int i = 0; i < newStrings.size(); i++) {
-                                    String content = newStrings.get(i);
-                                    if (content == null || content.length() == 0) continue;
-                                    content = content.replace("\"", "\\\"");
-                                    content = content.replace("'", "\\'");
-                                    Element stringItem = new Element("string");
-                                    stringItem.setAttribute("name", tags.get(i));
-                                    stringItem.addContent(content);
-                                    root.addContent(stringItem);
                                 }
                             }
 
@@ -376,6 +363,39 @@ public class StringHandlerAction extends AnAction {
             }
         } else {
             NotifyUtil.notifyError("res 目录不存在", project);
+        }
+    }
+
+    /**
+     * 根据name属性获取element，存在则清空内容返回，没有则创建一个新的返回
+     * @param name
+     * @param root
+     * @return
+     */
+    private Element getElementByName(String name, Element root) {
+        for(Element element : root.getChildren()) {
+            String eleName = element.getAttributeValue("name");
+            if (eleName.equals(name)) {
+                element.removeContent();
+                return element;
+            }
+        }
+        Element stringItem = new Element("string");
+        stringItem.setAttribute("name", name);
+        root.addContent(stringItem);
+        return stringItem;
+    }
+
+    private void removeElementByName(String name, Element root) {
+        Element targetElement = null;
+        for(Element element : root.getChildren()) {
+            if (name.equals(element.getAttributeValue("name"))) {
+                targetElement = element;
+                break;
+            }
+        }
+        if (targetElement != null) {
+            root.removeContent(targetElement);
         }
     }
 
