@@ -1,5 +1,6 @@
 package com.zhangxq.DependSwitch;
 
+import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.AnAction;
@@ -64,8 +65,8 @@ public class DependSwitchAction extends AnAction {
      */
     private void showResult(String json) {
         try {
-            ModuleConfig moduleConfig = gson.fromJson(json, ModuleConfig.class);
-            new ModuleListDialog(moduleConfig.localModules, new ModuleListDialog.Callback() {
+            List<ModuleItemConfig> list = gson.fromJson(json, new TypeToken<List<ModuleItemConfig>>(){}.getType());
+            new ModuleListDialog(list, new ModuleListDialog.Callback() {
                 @Override
                 public void onReset() {
                     findLocalModule();
@@ -84,10 +85,7 @@ public class DependSwitchAction extends AnAction {
     }
 
     private void updateLocalJson(List<ModuleItemConfig> list) {
-        ModuleConfig moduleConfig = new ModuleConfig();
-        moduleConfig.composingBuild = true;
-        moduleConfig.localModules = list;
-        String json = gson.toJson(moduleConfig);
+        String json = gson.toJson(list);
         File[] moduleFiles = currentFile.listFiles(((dir, name) -> name.equals("local_module.json")));
         File fileJson;
         try {
@@ -130,32 +128,21 @@ public class DependSwitchAction extends AnAction {
     }
 
     private void parseLocalModule(File moduleFile) {
-        File[] composeList = moduleFile.listFiles(File::isDirectory);
-        if (composeList == null) {
-            NotifyUtil.notifyError("未找到 module 目录，请重新选择路径！", project);
-            chooseDir();
-            return;
-        }
-
         List<ModuleItemConfig> list = new ArrayList<>();
-
-        for (File file : composeList) {
-            parseFile(file, "", list);
-        }
-
+        parseFile(moduleFile, list);
         updateLocalJson(list);
         parseLocalJson();
     }
 
-    private void parseFile(File file, String composeName, List<ModuleItemConfig> list) {
+    private void parseFile(File file, List<ModuleItemConfig> list) {
         File[] buildFiles = file.listFiles((dir, name) -> name.equals("gradle.properties"));
-        if (buildFiles == null || buildFiles.length == 0) return;
-        try {
-            File buildFile = buildFiles[0];
-            List<String> lines = Files.readAllLines(buildFile.toPath());
-
-            if (composeName == null || composeName.length() == 0) {
+        if (buildFiles != null && buildFiles.length > 0) {
+            try {
+                File buildFile = buildFiles[0];
+                List<String> lines = Files.readAllLines(buildFile.toPath());
                 String group = "";
+                String pom_name = "";
+                String pom_artifact_id = "";
                 for (String line : lines) {
                     if (line.toLowerCase().contains("group")) {
                         String[] splits = line.split("=");
@@ -163,19 +150,7 @@ public class DependSwitchAction extends AnAction {
                             group = splits[1];
                         }
                     }
-                }
-                if (group != null && group.length() > 0) {
-                    // 找到一个library集合
-                    File[] composeList = file.listFiles(File::isDirectory);
-                    if (composeList == null) return;
-                    for (File item : composeList) {
-                        parseFile(item, group, list);
-                    }
-                }
-            } else {
-                String pom_name = "";
-                String pom_artifact_id = "";
-                for (String line : lines) {
+
                     if (line.toLowerCase().contains("pom_name")) {
                         String[] splits = line.split("=");
                         if (splits.length == 2) {
@@ -190,17 +165,23 @@ public class DependSwitchAction extends AnAction {
                         }
                     }
                 }
-
-                if (pom_name.length() > 0 && pom_artifact_id.length() > 0) {
+                if (pom_name.length() > 0 && pom_artifact_id.length() > 0 && group.length() > 0) {
                     ModuleItemConfig itemConfig = new ModuleItemConfig();
                     itemConfig.module_name = pom_name;
                     itemConfig.module_dir = file.getParentFile().getAbsolutePath();
-                    itemConfig.package_name = composeName + ":" + pom_artifact_id;
+                    itemConfig.package_name = group + ":" + pom_artifact_id;
                     list.add(itemConfig);
                 }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+        }
+
+        File[] dirs = file.listFiles(File::isDirectory);
+        if (dirs != null) {
+            for (File item : dirs) {
+                parseFile(item, list);
+            }
         }
     }
 }

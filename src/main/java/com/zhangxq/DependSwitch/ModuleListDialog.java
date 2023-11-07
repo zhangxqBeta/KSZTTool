@@ -18,9 +18,7 @@ public class ModuleListDialog extends JDialog {
     private JButton buttonReset;
     private JScrollPane jScrollPanel;
     private JButton buttonCancel;
-
     String[] cNames = {"依赖", "开关"};
-
     public ModuleListDialog(List<ModuleItemConfig> list, Callback callback) {
         setContentPane(contentPane);
         setModal(true);
