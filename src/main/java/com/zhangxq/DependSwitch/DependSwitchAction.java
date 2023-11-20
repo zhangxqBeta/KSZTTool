@@ -69,7 +69,7 @@ public class DependSwitchAction extends AnAction {
             new ModuleListDialog(list, new ModuleListDialog.Callback() {
                 @Override
                 public void onReset() {
-                    findLocalModule();
+                    chooseDir(currentFile);
                 }
 
                 @Override
@@ -104,17 +104,16 @@ public class DependSwitchAction extends AnAction {
     private void findLocalModule() {
         File rootFile = currentFile.getParentFile(); // 上级目录
         if (rootFile != null) {
-            File[] rootFiles = rootFile.listFiles((dir, name) -> name.contains("litmatch_base"));
+            File[] rootFiles = rootFile.listFiles(pathname -> !pathname.getPath().equals(currentFile.getPath()));
             if (rootFiles == null || rootFiles.length == 0) {
-                chooseDir();
+                chooseDir(currentFile);
             } else {
-                File baseModuleFile = rootFiles[0];
-                parseLocalModule(baseModuleFile);
+                parseLocalModule(rootFiles);
             }
         }
     }
 
-    private void chooseDir() {
+    private void chooseDir(File currentFile) {
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         fileChooser.setAcceptAllFileFilterUsed(false);
@@ -123,13 +122,21 @@ public class DependSwitchAction extends AnAction {
         int result = fileChooser.showOpenDialog(null);
         if (result == JFileChooser.APPROVE_OPTION) {
             File file = fileChooser.getSelectedFile();
-            parseLocalModule(file);
+            if (currentFile.getPath().equals(file.getPath())) {
+                NotifyUtil.notifyError("不能选择当前工程", project);
+            } else {
+                File[] files = new File[1];
+                files[0] = file;
+                parseLocalModule(files);
+            }
         }
     }
 
-    private void parseLocalModule(File moduleFile) {
+    private void parseLocalModule(File[] moduleFiles) {
         List<ModuleItemConfig> list = new ArrayList<>();
-        parseFile(moduleFile, list);
+        for (File moduleFile : moduleFiles) {
+            parseFile(moduleFile, list);
+        }
         updateLocalJson(list);
         parseLocalJson();
     }
@@ -147,21 +154,21 @@ public class DependSwitchAction extends AnAction {
                     if (line.toLowerCase().contains("group")) {
                         String[] splits = line.split("=");
                         if (splits.length == 2) {
-                            group = splits[1];
+                            group = splits[1].trim();
                         }
                     }
 
                     if (line.toLowerCase().contains("pom_name")) {
                         String[] splits = line.split("=");
                         if (splits.length == 2) {
-                            pom_name = splits[1];
+                            pom_name = splits[1].trim();
                         }
                     }
 
-                    if (line.toLowerCase().contains("pom_artifact_id")) {
+                    if (line.toLowerCase().contains("pom_artifact_id") || line.toLowerCase().contains("artifactid")) {
                         String[] splits = line.split("=");
                         if (splits.length == 2) {
-                            pom_artifact_id = splits[1];
+                            pom_artifact_id = splits[1].trim();
                         }
                     }
                 }
