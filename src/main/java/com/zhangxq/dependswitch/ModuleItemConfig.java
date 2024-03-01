@@ -1,4 +1,4 @@
-package com.zhangxq.DependSwitch;
+package com.zhangxq.dependswitch;
 
 public class ModuleItemConfig {
     public boolean useLocal;

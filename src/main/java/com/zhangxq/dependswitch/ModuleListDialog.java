@@ -1,7 +1,5 @@
-package com.zhangxq.DependSwitch;
+package com.zhangxq.dependswitch;
 
-import com.intellij.openapi.actionSystem.ActionManager;
-import com.intellij.openapi.project.Project;
 import com.intellij.ui.table.JBTable;
 
 import javax.swing.*;

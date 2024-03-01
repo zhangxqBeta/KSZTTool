@@ -1,4 +1,4 @@
-package com.zhangxq.DependSwitch;
+package com.zhangxq.dependswitch;
 
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
