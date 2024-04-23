@@ -50,6 +50,7 @@
             <action id="stringHandlerAction" class="com.zhangxq.stringhandler.StringHandlerAction" text="多语言导入" description="StringHandler"/>
             <action id="colorNameFinder" class="com.zhangxq.colorfinder.ColorNameFinder" text="颜色查找" description="FindColorName"/>
             <action id="dependSwitchAction" class="com.zhangxq.dependswitch.DependSwitchAction" text="依赖管理" description="DependSwitch"/>
+            <action id="LogConvertAction" class="com.zhangxq.logconvert.LogConvertAction" text="日志转换"/>
         </group>
     </actions>
 </idea-plugin>
