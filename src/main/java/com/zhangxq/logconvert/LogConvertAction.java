@@ -76,6 +76,9 @@ public class LogConvertAction extends AnAction {
                     itemHeaderTime.addProperty("nanos", 0);
                     JsonObject itemHeader = new JsonObject();
                     itemHeader.addProperty("logLevel", "INFO");
+                    itemHeader.addProperty("pid", 0);
+                    itemHeader.addProperty("tid", 0);
+                    itemHeader.addProperty("processName", "-");
                     itemHeader.addProperty("applicationId", "-");
                     itemHeader.addProperty("tag", tag);
                     itemHeader.add("timestamp", itemHeaderTime);
