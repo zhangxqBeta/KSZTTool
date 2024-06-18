@@ -24,7 +24,7 @@ public class StringHandlerAction extends AnAction {
     private static final Logger logger = Logger.getInstance(StringHandlerAction.class);
     private final Set<String> keys = new HashSet<>(Arrays.asList("EN", "SA", "AR", "ID", "JP", "MY", "BR", "RU", "TH", "TR", "VN", "TW"));
     private final Set<String> languageKeys = new HashSet<>(Arrays.asList("ar-rSA", "es-rAR", "in-rID", "ja-rJP", "ms-rMY", "pt-rBR", "ru-rRU", "th-rTH", "tr-rTR", "vi-rVN", "zh-rTW"));
-    private static final String TAGS = "android";
+    private static final String ANDROID = "android";
     private String destFileName;
     private String oldDestFileName; // 旧文件名（格式为：string_xxx.xml，新版本修复为：strings_xxx.xml）
     private String destPath;
@@ -47,13 +47,13 @@ public class StringHandlerAction extends AnAction {
         File rootFile = new File(projectPath);
         List<File> selectFileList = new ArrayList<>();
         File[] rootFiles = rootFile.listFiles(new DirectoryFilter());
-        if (rootFiles != null && rootFiles.length > 0) {
+        if (rootFiles != null) {
             for (File item : rootFiles) {
                 filterModulePath(item, selectFileList);
             }
         }
 
-        if (selectFileList.size() == 0) {
+        if (selectFileList.isEmpty()) {
             NotifyUtil.notifyError("未找到目标工程", project);
         } else if (selectFileList.size() == 1) {
             destPath = selectFileList.get(0).getPath() + "/src/main/res";
@@ -170,7 +170,7 @@ public class StringHandlerAction extends AnAction {
             }
         }
 
-        if (result.size() > 0) {
+        if (!result.isEmpty()) {
             NotifyUtil.notify("excel解析完成", project);
             validData(result);
         } else {
@@ -198,12 +198,26 @@ public class StringHandlerAction extends AnAction {
         // ["功能模块", "页面", "中文", "Tags", "EN", "MY"]
         List<String> tops = data.get(0); // excel第一行
 
+        boolean exitAndroid = false;
         for (int i = 0; i < tops.size(); i++) {
             String top = tops.get(i);
-            if (TAGS.equalsIgnoreCase(top)|| keys.contains(top.toUpperCase())) { // 如果是 Tags，或者包含在预定义语言类型中，就是有效数据，需要保存
-                dataMap.put(top, new ArrayList<>());
-                columnMap.put(i, top);
+            if (ANDROID.equalsIgnoreCase(top) || keys.contains(top.toUpperCase())) { // 如果是 android，或者包含在预定义语言类型中，就是有效数据，需要保存
+                if (columnMap.containsValue(top)) {
+                    NotifyUtil.notifyError(top + " 列重复了，请检查文档", project);
+                    return;
+                } else {
+                    dataMap.put(top, new ArrayList<>());
+                    columnMap.put(i, top);
+                }
+
+                if (ANDROID.equalsIgnoreCase(top)) {
+                    exitAndroid = true;
+                }
             }
+        }
+        if (!exitAndroid) {
+            NotifyUtil.notifyError("未找到 android 列，请检查文档", project);
+            return;
         }
 
         for (int i = 1; i < data.size(); i++) {
@@ -212,7 +226,7 @@ public class StringHandlerAction extends AnAction {
                 if (columnMap.containsKey(j)) {
                     String cell = datum.get(j);
                     String key = columnMap.get(j);
-                    if (key.equalsIgnoreCase(TAGS)) {
+                    if (key.equalsIgnoreCase(ANDROID)) {
                         if (cell != null && !cell.isEmpty()) {
                             tags.add(cell);
                         } else {
@@ -226,7 +240,7 @@ public class StringHandlerAction extends AnAction {
         }
 
         List<String> enList = dataMap.get("EN");
-        if (enList == null || enList.size() == 0) {
+        if (enList == null || enList.isEmpty()) {
             NotifyUtil.notifyError("EN列不能为空", project);
             return;
         }
@@ -336,7 +350,7 @@ public class StringHandlerAction extends AnAction {
                                         removeElementByName(name.replace("*", ""), root);
                                     } else {
                                         String content = newStrings.get(i);
-                                        if (content == null || content.length() == 0) continue;
+                                        if (content == null || content.isEmpty()) continue;
                                         content = content.replace("\"", "\\\"");
                                         content = content.replace("'", "\\'");
                                         Element element = getElementByName(name, root);
@@ -411,7 +425,7 @@ public class StringHandlerAction extends AnAction {
             // 计算英语翻译中 %s 个数
             int countSEN = getSubStrCount(dataMap.get("EN").get(i), formatStr);
             for (String key : dataMap.keySet()) {
-                if (dataMap.get(key) == null || dataMap.get(key).size() <= i || dataMap.get(key).get(i).length() == 0) continue;
+                if (dataMap.get(key) == null || dataMap.get(key).size() <= i || dataMap.get(key).get(i).isEmpty()) continue;
                 String content = dataMap.get(key).get(i);
                 // 计算其他翻译中 %s 个数
                 int countSItem = getSubStrCount(content, formatStr);
@@ -438,7 +452,7 @@ public class StringHandlerAction extends AnAction {
         File[] settingFiles = sourceDirectory.listFiles(new SettingGradleNameFilter());
         if (settingFiles != null && settingFiles.length > 0) {
             File[] children = sourceDirectory.listFiles(new DirectoryFilter());
-            if (children != null && children.length > 0) {
+            if (children != null) {
                 for (File item : children) {
                     filterModulePath(item, destFiles);
                 }
