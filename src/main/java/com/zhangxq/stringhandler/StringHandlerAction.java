@@ -22,8 +22,8 @@ import java.util.*;
 
 public class StringHandlerAction extends AnAction {
     private static final Logger logger = Logger.getInstance(StringHandlerAction.class);
-    private final Set<String> keys = new HashSet<>(Arrays.asList("EN", "SA", "AR", "ID", "JP", "MY", "BR", "RU", "TH", "TR", "VN", "TW"));
-    private final Set<String> languageKeys = new HashSet<>(Arrays.asList("ar-rSA", "es-rAR", "in-rID", "ja-rJP", "ms-rMY", "pt-rBR", "ru-rRU", "th-rTH", "tr-rTR", "vi-rVN", "zh-rTW"));
+    private final List<String> keys = new ArrayList<>(Arrays.asList("EN", "SA", "AR", "ID", "JP", "MY", "BR", "RU", "TH", "TR", "VN", "TW", "IE", "IN"));
+    private final List<String> languageKeys = new ArrayList<>(Arrays.asList("ar-rSA", "es-rAR", "in-rID", "ja-rJP", "ms-rMY", "pt-rBR", "ru-rRU", "th-rTH", "tr-rTR", "vi-rVN", "zh-rTW", "en-rIN", "hi-rIN"));
     private static final String ANDROID = "android";
     private String destFileName;
     private String oldDestFileName; // 旧文件名（格式为：string_xxx.xml，新版本修复为：strings_xxx.xml）
@@ -292,10 +292,16 @@ public class StringHandlerAction extends AnAction {
         }
         if (file.exists()) {
             // 初始化多语言 values 文件夹
-            for (String languageKey : languageKeys) {
-                File languageFile = new File(destPath + "/values-" + languageKey);
-                if (!languageFile.exists()) {
-                    boolean ignore = languageFile.mkdir();
+            for (String key : dataMap.keySet()) {
+                if (keys.contains(key)) {
+                    int index = keys.indexOf(key);
+                    if (index > 0) {
+                        String languageKey = languageKeys.get(keys.indexOf(key) - 1);
+                        File languageFile = new File(destPath + "/values-" + languageKey);
+                        if (!languageFile.exists()) {
+                            boolean ignore = languageFile.mkdir();
+                        }
+                    }
                 }
             }
             // 初始化 values 文件夹
@@ -309,7 +315,7 @@ public class StringHandlerAction extends AnAction {
                 for (File item : files) {
                     String pathName = item.getName();
                     String pathNameSuffix = pathName.substring(pathName.length() - 2);
-                    if (item.getName().equals("values") || keys.contains(pathNameSuffix)) {
+                    if (item.getName().equals("values") || dataMap.containsKey(pathNameSuffix)) {
                         logger.debug("目录：" + item.getAbsolutePath());
 
                         try {
