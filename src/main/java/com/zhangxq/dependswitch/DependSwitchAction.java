@@ -148,20 +148,12 @@ public class DependSwitchAction extends AnAction {
                 File buildFile = buildFiles[0];
                 List<String> lines = Files.readAllLines(buildFile.toPath());
                 String group = "";
-                String pom_name = "";
                 String pom_artifact_id = "";
                 for (String line : lines) {
                     if (line.toLowerCase().contains("group")) {
                         String[] splits = line.split("=");
                         if (splits.length == 2) {
                             group = splits[1].trim();
-                        }
-                    }
-
-                    if (line.toLowerCase().contains("pom_name")) {
-                        String[] splits = line.split("=");
-                        if (splits.length == 2) {
-                            pom_name = splits[1].trim();
                         }
                     }
 
@@ -172,9 +164,9 @@ public class DependSwitchAction extends AnAction {
                         }
                     }
                 }
-                if (pom_name.length() > 0 && pom_artifact_id.length() > 0 && group.length() > 0) {
+                if (pom_artifact_id.length() > 0 && group.length() > 0) {
                     ModuleItemConfig itemConfig = new ModuleItemConfig();
-                    itemConfig.module_name = pom_name;
+                    itemConfig.module_name = pom_artifact_id;
                     itemConfig.module_dir = file.getParentFile().getAbsolutePath();
                     itemConfig.package_name = group + ":" + pom_artifact_id;
                     list.add(itemConfig);
