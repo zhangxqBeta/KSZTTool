@@ -166,7 +166,7 @@ public class DependSwitchAction extends AnAction {
                 }
                 if (pom_artifact_id.length() > 0 && group.length() > 0) {
                     ModuleItemConfig itemConfig = new ModuleItemConfig();
-                    itemConfig.module_name = pom_artifact_id;
+                    itemConfig.module_name = file.getName();
                     itemConfig.module_dir = file.getParentFile().getAbsolutePath();
                     itemConfig.package_name = group + ":" + pom_artifact_id;
                     list.add(itemConfig);
