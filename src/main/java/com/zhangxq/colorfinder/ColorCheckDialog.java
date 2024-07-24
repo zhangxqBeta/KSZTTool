@@ -2,6 +2,7 @@ package com.zhangxq.colorfinder;
 
 import com.intellij.openapi.project.Project;
 import com.zhangxq.NotifyUtil;
+import kotlin.Triple;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.input.SAXBuilder;
@@ -48,8 +49,16 @@ public class ColorCheckDialog extends JDialog {
                 return;
             }
 
-            List<String> result = findColor(lightColor, nightColor);
-            if (result.size() > 0) {
+            Triple<List<File>, List<File>, List<File>> files = findFile(project.getBasePath() + "/app/src/main/res");
+            Triple<List<File>, List<File>, List<File>> filesLib = findFile(findStyleLibResPath());
+            files.getFirst().addAll(filesLib.getFirst());
+            files.getSecond().addAll(filesLib.getSecond());
+            files.getThird().addAll(filesLib.getThird());
+            List<File> lightColorFileList = files.getFirst();
+            List<File> nightColorFileList = files.getSecond();
+            List<File> singleColorFileList = files.getThird();
+            List<String> result = findColor(lightColor, nightColor, lightColorFileList, nightColorFileList, singleColorFileList);
+            if (!result.isEmpty()) {
                 setMinimumSize(new Dimension(400, 390));
                 setMaximumSize(new Dimension(400, 390));
                 jsPanel.setVisible(true);
@@ -77,10 +86,47 @@ public class ColorCheckDialog extends JDialog {
         contentPane.registerKeyboardAction(e -> dispose(), KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
     }
 
-    private List<String> findColor(String lightColor, String nightColor) {
-        File file = new File(project.getBasePath() + "/app/src/main/res");
+    // 寻找 style 库 res 目录的路径
+    private String findStyleLibResPath() {
+        String basePath = project.getBasePath();
+        if (basePath != null) {
+            File baseFile = new File(project.getBasePath());
+            File parentFile = baseFile.getParentFile();
+            List<File> styleLibFiles = new ArrayList<>();
+            findStyleLib(parentFile, styleLibFiles, 0);
+            if (styleLibFiles.isEmpty()) {
+                NotifyUtil.notifyError("lit-styles 目录未找到", project);
+                return "";
+            } else {
+                return styleLibFiles.get(0).getPath() + "/src/main/res";
+            }
+        } else {
+            return "";
+        }
+    }
+
+    private void findStyleLib(File file, List<File> targetList, int layer) {
+        // 递归到第 5 层就停止，减少无意义递归
+        if (layer > 5) return;
+        if ("lit-styles".equals(file.getName())) {
+            targetList.add(file);
+        } else {
+            layer++;
+            File[] files = file.listFiles();
+            if (files != null) {
+                for (File item : files) {
+                    findStyleLib(item, targetList, layer);
+                }
+            }
+        }
+    }
+
+    private Triple<List<File>, List<File>, List<File>> findFile(String path) {
+        List<File> allColorFileList = new ArrayList<>();
+        if (path == null || path.isEmpty()) return new Triple<>(new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
+        File file = new File(path);
         if (file.exists()) {
-            findFile(file);
+            findFile(file, allColorFileList);
         }
 
         List<File> lightColorFileList = new ArrayList<>(); // 亮色模式颜色文件列表
@@ -107,16 +153,19 @@ public class ColorCheckDialog extends JDialog {
                 singleColorFileList.add(item);
             }
         }
+        return new Triple<>(lightColorFileList, nightColorFileList, singleColorFileList);
+    }
 
+    private List<String> findColor(String lightColor, String nightColor, List<File> lightColorFileList, List<File> nightColorFileList, List<File> singleColorFileList) {
         // 拿到所有单色颜色
         Map<String, String> singleColorMap = getColorMap(singleColorFileList);
-        if (lightColorFileList.size() > 0 && nightColorFileList.size() > 0) {
+        if (!lightColorFileList.isEmpty() && !nightColorFileList.isEmpty()) {
             // 拿到所有亮色模式颜色
             Map<String, String> lightColorMap = getColorMap(lightColorFileList);
             // 拿到所有暗色模式颜色
             Map<String, String> nightColorMap = getColorMap(nightColorFileList);
 
-            List<String> matchLightColor = getColorNames(lightColor.toLowerCase(), lightColorMap,singleColorMap);
+            List<String> matchLightColor = getColorNames(lightColor.toLowerCase(), lightColorMap, singleColorMap);
             List<String> matchNightColor = getColorNames(nightColor.toLowerCase(), nightColorMap, singleColorMap);
             List<String> result = new ArrayList<>();
 
@@ -221,15 +270,15 @@ public class ColorCheckDialog extends JDialog {
         return nightColorMap;
     }
 
-    private void findFile(File file) {
+    private void findFile(File file, List<File> fileList) {
         File[] files = file.listFiles();
         if (files == null) return;
         for (File f : files) {
             if (f.isDirectory()) {
-                findFile(f);
+                findFile(f, fileList);
             } else {
-                if (f.getName().contains("color")) {
-                    allColorFileList.add(f);
+                if (f.getName().contains("color") && f.getName().endsWith("xml")) {
+                    fileList.add(f);
                 }
             }
         }
