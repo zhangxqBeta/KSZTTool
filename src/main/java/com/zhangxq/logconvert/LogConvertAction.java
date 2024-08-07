@@ -32,8 +32,8 @@ public class LogConvertAction extends AnAction {
                 String line;
                 SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
                 while((line = reader.readLine()) != null) {
-                    String time = "";
-                    String content = "";
+                    String time;
+                    String content;
                     try {
                         int start = line.indexOf('[');
                         int end = line.indexOf(']');
@@ -41,9 +41,8 @@ public class LogConvertAction extends AnAction {
                         time = line.substring(start + 1, end);
 
                         start = line.indexOf('[', end + 1);
-                        end = line.indexOf(']', end + 1);
-                        if (start == -1 || end == -1) continue;
-                        content = line.substring(start + 1, end);
+                        if (start == -1) continue;
+                        content = line.substring(start + 1, line.length() - 1);
                     } catch (Exception e) {
                         continue;
                     }
