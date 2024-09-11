@@ -22,8 +22,10 @@ import java.util.*;
 
 public class StringHandlerAction extends AnAction {
     private static final Logger logger = Logger.getInstance(StringHandlerAction.class);
-    private final List<String> keys = new ArrayList<>(Arrays.asList("EN", "SA", "AR", "ID", "JP", "MY", "BR", "RU", "TH", "TR", "VN", "TW", "IE", "IN"));
-    private final List<String> languageKeys = new ArrayList<>(Arrays.asList("ar-rSA", "es-rAR", "in-rID", "ja-rJP", "ms-rMY", "pt-rBR", "ru-rRU", "th-rTH", "tr-rTR", "vi-rVN", "zh-rTW", "en-rIN", "hi-rIN"));
+    private final List<String> keys = List.of("SA", "AR", "ID", "JP", "MY", "BR", "RU", "TH", "TR", "VN", "TW", "IE", "IN");
+    private final List<String> extraKeys = List.of("EN", "EG", "AE", "ES", "MX", "CO", "PT");
+    private final Map<String, List<String>> regionMap = Map.of("SA", List.of("EG", "AE"), "AR", List.of("ES", "MX", "CO"), "BR", List.of("PT")); // 相同地区映射表
+    private final List<String> languageKeys = List.of("ar-rSA", "es-rAR", "in-rID", "ja-rJP", "ms-rMY", "pt-rBR", "ru-rRU", "th-rTH", "tr-rTR", "vi-rVN", "zh-rTW", "en-rIN", "hi-rIN");
     private static final String ANDROID = "android";
     private String destFileName;
     private String oldDestFileName; // 旧文件名（格式为：string_xxx.xml，新版本修复为：strings_xxx.xml）
@@ -201,7 +203,8 @@ public class StringHandlerAction extends AnAction {
         boolean exitAndroid = false;
         for (int i = 0; i < tops.size(); i++) {
             String top = tops.get(i);
-            if (ANDROID.equalsIgnoreCase(top) || keys.contains(top.toUpperCase())) { // 如果是 android，或者包含在预定义语言类型中，就是有效数据，需要保存
+            // 如果是 android，或者包含在预定义语言类型中，就是有效数据，需要保存
+            if (ANDROID.equalsIgnoreCase(top) || keys.contains(top.toUpperCase()) || extraKeys.contains(top.toUpperCase())) {
                 if (columnMap.containsValue(top)) {
                     NotifyUtil.notifyError(top + " 列重复了，请检查文档", project);
                     return;
@@ -291,12 +294,27 @@ public class StringHandlerAction extends AnAction {
             boolean ignore = file.mkdir();
         }
         if (file.exists()) {
+            // 对多地区语言进行补全（比如SA如果是空的，那就用EG或者AE进行补全，三者是同一个地区的）
+            for (String regionKey: regionMap.keySet()) {
+                List<String> list = dataMap.get(regionKey);
+                if (list == null || list.isEmpty() || isAllEmpty(list)) {
+                    List<String> regionList = regionMap.get(regionKey);
+                    for (String region: regionList) {
+                        List<String> regionDataList = dataMap.get(region);
+                        if (regionDataList != null && !regionDataList.isEmpty() && !isAllEmpty(regionDataList)) {
+                            dataMap.put(regionKey, regionDataList);
+                            break;
+                        }
+                    }
+                }
+            }
+
             // 初始化多语言 values 文件夹
             for (String key : dataMap.keySet()) {
                 if (keys.contains(key)) {
                     int index = keys.indexOf(key);
                     if (index > 0) {
-                        String languageKey = languageKeys.get(keys.indexOf(key) - 1);
+                        String languageKey = languageKeys.get(index);
                         File languageFile = new File(destPath + "/values-" + languageKey);
                         if (!languageFile.exists()) {
                             boolean ignore = languageFile.mkdir();
@@ -359,6 +377,7 @@ public class StringHandlerAction extends AnAction {
                                         if (content == null || content.isEmpty()) continue;
                                         content = content.replace("\"", "\\\"");
                                         content = content.replace("'", "\\'");
+                                        content = replacePercent(content);
                                         Element element = getElementByName(name, root);
                                         element.addContent(content);
                                     }
@@ -384,6 +403,13 @@ public class StringHandlerAction extends AnAction {
         } else {
             NotifyUtil.notifyError("res 目录不存在", project);
         }
+    }
+
+    private boolean isAllEmpty(List<String> list) {
+        for (String item: list) {
+            if (item != null && !item.isEmpty()) return false;
+        }
+        return true;
     }
 
     /**
@@ -480,6 +506,24 @@ public class StringHandlerAction extends AnAction {
             }
         }
         return count;
+    }
+
+    private String replacePercent(String input) {
+        if (!input.contains("%s") && !input.contains("%d")) return input;
+        StringBuilder result = new StringBuilder();
+        for (int i = 0; i < input.length(); i++) {
+            char currentChar = input.charAt(i);
+            if (currentChar == '%') {
+                if (i + 1 >= input.length() || (input.charAt(i + 1) != 's' && input.charAt(i + 1) != 'd')) {
+                    result.append("%%");
+                } else {
+                    result.append(currentChar);
+                }
+            } else {
+                result.append(currentChar);
+            }
+        }
+        return result.toString();
     }
 
     private class DestFileNameFilter implements FilenameFilter {
