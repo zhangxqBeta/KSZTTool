@@ -25,7 +25,7 @@ public class StringHandlerAction extends AnAction {
     private final List<String> keys = List.of("SA", "AR", "ID", "JP", "MY", "BR", "RU", "TH", "TR", "VN", "TW", "IE", "IN");
     private final List<String> extraKeys = List.of("EN", "EG", "AE", "ES", "MX", "CO", "PT");
     private final Map<String, List<String>> regionMap = Map.of("SA", List.of("EG", "AE"), "AR", List.of("ES", "MX", "CO"), "BR", List.of("PT")); // 相同地区映射表
-    private final List<String> languageKeys = List.of("ar-rSA", "es-rAR", "in-rID", "ja-rJP", "ms-rMY", "pt-rBR", "ru-rRU", "th-rTH", "tr-rTR", "vi-rVN", "zh-rTW", "en-rIN", "hi-rIN");
+    private final List<String> languagePaths = List.of("values-ar-rSA", "values-es-rAR", "values-in-rID", "values-ja-rJP", "values-ms-rMY", "values-pt-rBR", "values-ru-rRU", "values-th-rTH", "values-tr-rTR", "values-vi-rVN", "values-zh-rTW", "values-en-rIN", "values-hi-rIN");
     private static final String ANDROID = "android";
     private String destFileName;
     private String oldDestFileName; // 旧文件名（格式为：string_xxx.xml，新版本修复为：strings_xxx.xml）
@@ -201,12 +201,13 @@ public class StringHandlerAction extends AnAction {
         List<String> tops = data.get(0); // excel第一行
 
         boolean exitAndroid = false;
+        boolean exitLanguage = false;
         for (int i = 0; i < tops.size(); i++) {
             String top = tops.get(i);
             // 如果是 android，或者包含在预定义语言类型中，就是有效数据，需要保存
             if (ANDROID.equalsIgnoreCase(top) || keys.contains(top.toUpperCase()) || extraKeys.contains(top.toUpperCase())) {
                 if (columnMap.containsValue(top)) {
-                    NotifyUtil.notifyError(top + " 列重复了，请检查文档", project);
+                    NotifyUtil.notifyError(top + "列重复了，请检查文档", project);
                     return;
                 } else {
                     dataMap.put(top, new ArrayList<>());
@@ -216,10 +217,18 @@ public class StringHandlerAction extends AnAction {
                 if (ANDROID.equalsIgnoreCase(top)) {
                     exitAndroid = true;
                 }
+
+                if (keys.contains(top.toUpperCase()) || extraKeys.contains(top.toUpperCase())) {
+                    exitLanguage = true;
+                }
             }
         }
         if (!exitAndroid) {
             NotifyUtil.notifyError("未找到 android 列，请检查文档", project);
+            return;
+        }
+        if (!exitLanguage) {
+            NotifyUtil.notifyError("未找到有效语言列，请检查文档", project);
             return;
         }
 
@@ -314,8 +323,8 @@ public class StringHandlerAction extends AnAction {
                 if (keys.contains(key)) {
                     int index = keys.indexOf(key);
                     if (index > 0) {
-                        String languageKey = languageKeys.get(index);
-                        File languageFile = new File(destPath + "/values-" + languageKey);
+                        String languagePath = languagePaths.get(index);
+                        File languageFile = new File(destPath + "/" + languagePath);
                         if (!languageFile.exists()) {
                             boolean ignore = languageFile.mkdir();
                         }
@@ -332,10 +341,11 @@ public class StringHandlerAction extends AnAction {
             if (files != null) {
                 for (File item : files) {
                     String pathName = item.getName();
-                    String pathNameSuffix = pathName.substring(pathName.length() - 2);
-                    if (item.getName().equals("values") || dataMap.containsKey(pathNameSuffix)) {
-                        logger.debug("目录：" + item.getAbsolutePath());
-
+                    String mapKey = "null";
+                    if (languagePaths.contains(pathName)) {
+                        mapKey = keys.get(languagePaths.indexOf(pathName));
+                    }
+                    if (item.getName().equals("values") || dataMap.containsKey(mapKey)) {
                         try {
                             SAXBuilder builder = new SAXBuilder();
                             File fileNew;
@@ -365,7 +375,7 @@ public class StringHandlerAction extends AnAction {
                                 root = doc.getRootElement();
                             }
 
-                            List<String> newStrings = dataMap.get(pathNameSuffix);
+                            List<String> newStrings = dataMap.get(mapKey);
                             if (item.getName().equals("values")) newStrings = dataMap.get("EN");
                             if (newStrings != null && newStrings.size() == tags.size()) {
                                 for (int i = 0; i < newStrings.size(); i++) {
