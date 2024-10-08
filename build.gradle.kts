@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "com.zhangxq"
-version = "3.4.9"
+version = "3.4.10"
 
 repositories {
     mavenCentral()
@@ -34,7 +34,7 @@ tasks {
 
     patchPluginXml {
         sinceBuild.set("203")
-        untilBuild.set("241.*")
+        untilBuild.set("242.*")
     }
 
     signPlugin {
