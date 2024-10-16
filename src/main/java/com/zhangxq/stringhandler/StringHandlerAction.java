@@ -567,7 +567,7 @@ public class StringHandlerAction extends AnAction {
     private static class BuildGradleNameFilter implements FilenameFilter {
         @Override
         public boolean accept(File dir, String name) {
-            return name.equals("build.gradle");
+            return name.equals("build.gradle") || name.equals("build.gradle.kts");
         }
     }
 
