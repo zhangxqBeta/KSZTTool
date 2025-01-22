@@ -1,50 +1,35 @@
-<!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
 <idea-plugin>
-    <!-- Unique identifier of the plugin. It should be FQN. It cannot be changed between the plugin versions. -->
     <id>com.zhangxq.stringHandler</id>
-
-    <!-- Public plugin name should be written in Title Case.
-         Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-name -->
     <name>KSZT便捷插件</name>
-
-    <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
     <vendor email="zhangxiaoqi@ksztone.com" url="https://www.yourcompany.com">kszt</vendor>
-
-    <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
-         Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
-         Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
     <description>
         <![CDATA[
             <html>
                 <body>
                     KSZT 工具插件：
                     <ul>
-                      <li>多语言导入：下载 xls 或者 xlsx 文件，设置名称后自动导入</li>
-                      <li>颜色查找和添加：根据亮色和暗色查到对应的颜色名称</li>
-                      <li>切换本地依赖和远程依赖</li>
+                      <li>多语言自动导入</li>
+                      <li>颜色查找和添加</li>
+                      <li>依赖管理</li>
+                      <li>日志转换</li>
                     </ul>
                     <a href="https://v6527g89pb.feishu.cn/wiki/wikcneRJyP56ZZLzlPJqQzTM4Se">使用文档</a>
                 </body>
             </html>
         ]]>
     </description>
-
-    <!-- Product and plugin compatibility requirements.
-         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
     <depends>com.intellij.modules.platform</depends>
+    <extensions defaultExtensionNs="com.intellij" />
 
-    <!-- Extension points defined by the plugin.
-         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
-    <extensions defaultExtensionNs="com.intellij">
-
-    </extensions>
-
+    // 配置通知
     <extensions defaultExtensionNs="com.intellij">
         <notificationGroup displayType="BALLOON" id="KSZTTool" />
         <notificationGroup displayType="BALLOON" id="KSZTToolError" />
     </extensions>
 
+    // 配置 Action
     <actions>
+        // 配置 Action 的组
         <group id="KSZTTool" text="KSZTTool" popup="true" description="KSZTTool">
             <add-to-group group-id="ToolsMenu" anchor="first"/>
             <action id="stringHandlerAction" class="com.zhangxq.stringhandler.StringHandlerAction" text="多语言导入" description="StringHandler"/>

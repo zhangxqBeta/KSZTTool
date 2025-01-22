@@ -16,17 +16,15 @@ dependencies {
     implementation("com.google.code.gson:gson:2.10.1")
 }
 
-// Configure Gradle IntelliJ Plugin
-// Read more: https://plugins.jetbrains.com/docs/intellij/tools-gradle-intellij-plugin.html
 intellij {
     version.set("2023.3")
-    type.set("IC") // Target IDE Platform
+    type.set("IC")
 
-    plugins.set(listOf(/* Plugin Dependencies */))
+    // 依赖的插件
+    plugins.set(listOf())
 }
 
 tasks {
-    // Set the JVM compatibility versions
     withType<JavaCompile> {
         sourceCompatibility = "11"
         targetCompatibility = "11"
