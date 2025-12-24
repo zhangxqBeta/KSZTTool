@@ -22,10 +22,10 @@ import java.util.*;
 
 public class StringHandlerAction extends AnAction {
     private static final Logger logger = Logger.getInstance(StringHandlerAction.class);
-    private final List<String> keys = List.of("SA", "AR", "ID", "JP", "MY", "BR", "RU", "TH", "TR", "VN", "TW", "IE", "IN");
+    private final List<String> keys = List.of("SA", "AR", "ID", "JP", "MY", "BR", "RU", "TH", "TR", "VN", "TW", "IE", "IN", "MM", "JP");
     private final List<String> extraKeys = List.of("EN", "EG", "AE", "ES", "MX", "CO", "PT");
     private final Map<String, List<String>> regionMap = Map.of("SA", List.of("EG", "AE"), "AR", List.of("ES", "MX", "CO"), "BR", List.of("PT")); // 相同地区映射表
-    private final List<String> languagePaths = List.of("values-ar-rSA", "values-es-rAR", "values-in-rID", "values-ja-rJP", "values-ms-rMY", "values-pt-rBR", "values-ru-rRU", "values-th-rTH", "values-tr-rTR", "values-vi-rVN", "values-zh-rTW", "values-en-rIN", "values-hi-rIN");
+    private final List<String> languagePaths = List.of("values-ar-rSA", "values-es-rAR", "values-in-rID", "values-ja-rJP", "values-ms-rMY", "values-pt-rBR", "values-ru-rRU", "values-th-rTH", "values-tr-rTR", "values-vi-rVN", "values-zh-rTW", "values-en-rIN", "values-hi-rIN", "values-my-rMM", "values-ja-rJP");
     private static final String ANDROID = "android";
     private String destFileName;
     private String oldDestFileName; // 旧文件名（格式为：string_xxx.xml，新版本修复为：strings_xxx.xml）
