@@ -5,6 +5,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.zhangxq.NotifyUtil;
+import kotlin.Pair;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -37,7 +38,8 @@ public class StringHandlerAction extends AnAction {
     public void actionPerformed(AnActionEvent e) {
         project = e.getProject();
         if (project != null) {
-            projectPath = project.getBasePath();
+//            projectPath = project.getBasePath();
+            projectPath = "/Users/construct/work/litmatch_app";
             chooseDestPath();
         }
     }
@@ -144,17 +146,38 @@ public class StringHandlerAction extends AnAction {
      */
     private void parseSheet(Sheet sheet) {
         List<List<String>> result = new ArrayList<>();
-        Row firstRow = sheet.getRow(0);
-        if (firstRow == null) {
-            NotifyUtil.notifyError("首行为空！！", project);
+        Pair<Integer, Row> titleRow = findTitleRow(sheet);
+        if (titleRow == null) {
+            NotifyUtil.notifyError("未找到标题行！！", project);
             return;
         }
 
+        // 优先处理标题行，放在放在数组第一行
+        result.add(new ArrayList<>());
+        for (int j = 0; j < titleRow.getSecond().getPhysicalNumberOfCells(); j++) {
+            Cell cell = titleRow.getSecond().getCell(j);
+            if (cell != null) {
+                String cellValue = "";
+                if (cell.getCellType() == CellType.STRING) {
+                    cellValue = cell.getStringCellValue();
+                } else if (cell.getCellType() == CellType.NUMERIC) {
+                    cellValue = cell.getNumericCellValue() + "";
+                }
+                if (cellValue == null || cellValue.isEmpty()) cellValue = "";
+                cellValue = cellValue.trim();
+                result.get(0).add(cellValue);
+            } else {
+                result.get(0).add("");
+            }
+        }
+
+        // 处理其他行
         for (int i = 0; i < sheet.getPhysicalNumberOfRows(); i++) {
-            result.add(new ArrayList<>());
             Row row = sheet.getRow(i);
+            if (i == titleRow.getFirst()) continue;
             if (row == null) break;
-            for (int j = 0; j < firstRow.getPhysicalNumberOfCells(); j++) {
+            result.add(new ArrayList<>());
+            for (int j = 0; j < titleRow.getSecond().getPhysicalNumberOfCells(); j++) {
                 Cell cell = row.getCell(j);
                 if (cell != null) {
                     String cellValue = "";
@@ -178,6 +201,33 @@ public class StringHandlerAction extends AnAction {
         } else {
             NotifyUtil.notifyError("解析数据为空", project);
         }
+    }
+
+    /**
+     * 找到标题行包含，一般包含 Tags、Android、EN、MY、PH.......
+     * @param sheet
+     * @return
+     */
+    private Pair<Integer, Row> findTitleRow(Sheet sheet) {
+        for (int i = 0; i < sheet.getPhysicalNumberOfRows(); i++) {
+            Row itemRow = sheet.getRow(i);
+            boolean hasAndroid = false;
+            boolean hasEn = false;
+            for (int j = 0; j < itemRow.getPhysicalNumberOfCells(); j++) {
+                Cell cell = itemRow.getCell(j);
+                if (cell.getCellType() == CellType.STRING) {
+                    String cellValue = cell.getStringCellValue();
+                    if ("android".equalsIgnoreCase(cellValue)) {
+                        hasAndroid = true;
+                    }
+                    if ("en".equalsIgnoreCase(cellValue)) {
+                        hasEn = true;
+                    }
+                }
+            }
+            if (hasAndroid && hasEn) return new Pair<>(i, itemRow);
+        }
+        return null;
     }
 
     /**
