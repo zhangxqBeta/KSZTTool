@@ -371,12 +371,10 @@ public class StringHandlerAction extends AnAction {
             for (String key : dataMap.keySet()) {
                 if (keys.contains(key)) {
                     int index = keys.indexOf(key);
-                    if (index > 0) {
-                        String languagePath = languagePaths.get(index);
-                        File languageFile = new File(destPath + "/" + languagePath);
-                        if (!languageFile.exists()) {
-                            boolean ignore = languageFile.mkdir();
-                        }
+                    String languagePath = languagePaths.get(index);
+                    File languageFile = new File(destPath + "/" + languagePath);
+                    if (!languageFile.exists()) {
+                        boolean ignore = languageFile.mkdir();
                     }
                 }
             }
