@@ -214,7 +214,7 @@ public class StringHandlerAction extends AnAction {
             boolean hasEn = false;
             for (int j = 0; j < itemRow.getPhysicalNumberOfCells(); j++) {
                 Cell cell = itemRow.getCell(j);
-                if (cell.getCellType() == CellType.STRING) {
+                if (cell != null && cell.getCellType() == CellType.STRING) {
                     String cellValue = cell.getStringCellValue();
                     if ("android".equalsIgnoreCase(cellValue)) {
                         hasAndroid = true;
